@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-indigo-50:#eef3ff; --color-indigo-100:#dae6ff; --color-indigo-200:#bcd0ff;
+  --color-indigo-300:#8faeff; --color-indigo-400:#5b82f4; --color-indigo-500:#3660db;
+  --color-indigo-600:#2a4ec4; --color-indigo-700:#2340a1; --color-indigo-800:#223a83; --color-indigo-900:#21356a;
+  --color-violet-400:#5b82f4; --color-violet-500:#3660db; --color-violet-600:#2a4ec4;
+  --color-fuchsia-500:#2a4ec4; --color-fuchsia-600:#2340a1;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+  --shadow-md:0 12px 30px -20px rgba(15,23,42,.28);
+  --shadow-lg:0 30px 60px -35px rgba(15,23,42,.34);
+  --ease-out-quart:cubic-bezier(.22,.61,.36,1);
+}
+:root { color-scheme: light; }
+.dark { color-scheme: dark; }
+body { @apply bg-slate-100 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100; letter-spacing:-0.011em; }
+h1,h2,h3 { letter-spacing:-0.02em; }
+.tnum,table,th,td { font-variant-numeric: tabular-nums; }
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible {
+  outline:none; box-shadow:0 0 0 2px #fff,0 0 0 4px var(--color-indigo-500); border-radius:.5rem;
+}
+.dark a:focus-visible,.dark button:focus-visible,.dark input:focus-visible,.dark select:focus-visible,.dark textarea:focus-visible,.dark [tabindex]:focus-visible {
+  box-shadow:0 0 0 2px #0f172a,0 0 0 4px var(--color-indigo-400);
+}
+::-webkit-scrollbar { height:8px; width:8px; }
+::-webkit-scrollbar-thumb { @apply rounded-full bg-slate-300 dark:bg-slate-700; }
+::-webkit-scrollbar-thumb:hover { @apply bg-slate-400 dark:bg-slate-600; }
+::-webkit-scrollbar-track { background:transparent; }
+.recharts-default-legend .recharts-legend-item-text { color:#64748b; }
+.dark .recharts-default-legend .recharts-legend-item-text { color:#cbd5e1; }
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value { font-variant-numeric: tabular-nums; }
+.dragging { @apply opacity-40; }
+.drop-target { @apply ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-950; }
+@keyframes pf-rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.pf-rise { animation: pf-rise .35s var(--ease-out-quart) both; }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms!important; transition-duration:.001ms!important; } }

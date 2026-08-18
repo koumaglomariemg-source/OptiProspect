@@ -1,0 +1,54 @@
+# Flutter/Dart
+.dart_tool/
+build/
+*.lock
+*.log
+.packages
+.pub-cache/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Generated
+*.g.dart
+*.freezed.dart
+
+# Coverage
+coverage/
+*.lcov
+
+# Mobile
+mobile/build/
+mobile/.dart_tool/
+mobile/*.lock
+mobile/.packages
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+
+# Server
+server/node_modules/
+server/dist/
+server/*.log
+server/.env
+
+# IDE settings
+*.sublime-workspace
+*.sublime-project
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
