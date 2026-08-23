@@ -1,38 +1,38 @@
 export const STAGES = [
   {
-    key: "nouveau",
-    label: "Nouveau",
+    key: "etablissements_identifies",
+    label: "Établissements Identifiés",
     dot: "bg-sky-500",
     badge: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
     accent: "text-sky-500",
   },
   {
-    key: "qualification",
-    label: "Qualification",
+    key: "prospection",
+    label: "Prospection",
     dot: "bg-amber-500",
     badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     accent: "text-amber-500",
   },
   {
     key: "suivi",
-    label: "Suivi",
+    label: "Établissements Suivis",
     dot: "bg-violet-500",
     badge: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
     accent: "text-violet-500",
   },
   {
-    key: "conversion",
-    label: "Conversion",
+    key: "contrat_depose",
+    label: "Contrats Déposés",
+    dot: "bg-indigo-500",
+    badge: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+    accent: "text-indigo-500",
+  },
+  {
+    key: "contrat_signe",
+    label: "Contrats Signés",
     dot: "bg-emerald-500",
     badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     accent: "text-emerald-500",
-  },
-  {
-    key: "perdu",
-    label: "Perdu",
-    dot: "bg-rose-500",
-    badge: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-    accent: "text-rose-500",
   },
 ];
 

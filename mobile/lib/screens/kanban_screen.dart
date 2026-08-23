@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
@@ -51,18 +52,18 @@ class _KanbanScreenState extends State<KanbanScreen> {
   }
 
   List<StageSetting> _defaultStages() => const [
-        StageSetting(key: 'nouveau', label: 'Nouveau', color: 'sky'),
-        StageSetting(key: 'qualification', label: 'Qualification', color: 'amber'),
-        StageSetting(key: 'suivi', label: 'Suivi', color: 'violet'),
-        StageSetting(key: 'conversion', label: 'Conversion', color: 'emerald'),
-        StageSetting(key: 'perdu', label: 'Perdu', color: 'rose'),
+        StageSetting(key: 'identification', label: 'Identification', color: 'sky'),
+        StageSetting(key: 'prospection', label: 'Prospection', color: 'indigo'),
+        StageSetting(key: 'suivi', label: 'Suivi', color: 'amber'),
+        StageSetting(key: 'depot_contrat', label: 'Dépôt contrat', color: 'violet'),
+        StageSetting(key: 'signature_contrat', label: 'Signature contrat', color: 'emerald'),
       ];
 
   Map<String, List<Prospect>> get _byStage {
     final map = <String, List<Prospect>>{};
     for (final s in _stages) map[s.key] = [];
     for (final p in _prospects ?? []) {
-      final key = p.stage ?? 'nouveau';
+      final key = p.stage ?? 'identification';
       if (!map.containsKey(key)) map[key] = [];
       map[key]!.add(p);
     }
@@ -85,7 +86,6 @@ class _KanbanScreenState extends State<KanbanScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final canWrite = auth.user?.role != 'manager';
-    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: _error != null
@@ -94,37 +94,11 @@ class _KanbanScreenState extends State<KanbanScreen> {
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                   onRefresh: _load,
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(child: _buildHeader(canWrite)),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                          child: DragAndDropLists(
-                            children: _stages.map((stage) {
-                              final prospects = _byStage[stage.key] ?? [];
-                              final color = stageColor(stage.key);
-                              return _KanbanColumn(
-                                stage: stage,
-                                prospects: prospects,
-                                color: color,
-                                canWrite: canWrite,
-                                onReorder: (oldIndex, newIndex) {},
-                                onDragComplete: (item, fromListIndex, toListIndex, newIndex) {
-                                  final prospect = item as Prospect;
-                                  final targetStage = _stages[toListIndex].key;
-                                  _moveProspect(prospect, targetStage);
-                                },
-                                onTap: _openDetail,
-                              );
-                            }).toList(),
-                            axis: Axis.horizontal,
-                            listWidth: 300,
-                            itemDivider: const SizedBox(height: 8),
-                            listDivider: const SizedBox(width: 12),
-                          ),
-                        ),
+                  child: Column(
+                    children: [
+                      _buildHeader(canWrite),
+                      Expanded(
+                        child: kIsWeb ? _buildWebBoard(canWrite) : _buildDragBoard(),
                       ),
                     ],
                   ),
@@ -152,6 +126,112 @@ class _KanbanScreenState extends State<KanbanScreen> {
       MaterialPageRoute(builder: (_) => ProspectDetailScreen(prospect: fresh)),
     );
     _load();
+  }
+
+  Widget _buildDragBoard() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: DragAndDropLists(
+        children: _stages.map((stage) {
+          final prospects = _byStage[stage.key] ?? [];
+          final color = stageColor(stage.key);
+          return DragAndDropList(
+            key: ValueKey('list_${stage.key}'),
+            header: _ColumnHeader(
+              stage: stage,
+              color: color,
+              count: prospects.length,
+            ),
+            contentsWhenEmpty: _EmptyColumn(color: color),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
+            ),
+            children: [
+              for (final p in prospects)
+                DragAndDropItem(
+                  key: ValueKey('item_${p.id}'),
+                  child: _KanbanCard(
+                    p: p,
+                    color: color,
+                    onTap: () => _openDetail(p),
+                  ),
+                ),
+            ],
+          );
+        }).toList(),
+        onItemReorder:
+            (oldItemIndex, oldListIndex, newItemIndex, newListIndex) {
+          final fromKey = _stages[oldListIndex].key;
+          final fromList = _byStage[fromKey] ?? [];
+          if (oldItemIndex < 0 || oldItemIndex >= fromList.length) return;
+          _moveProspect(fromList[oldItemIndex], _stages[newListIndex].key);
+        },
+        onListReorder: (_, __) {},
+        axis: Axis.horizontal,
+        listWidth: 300,
+        itemDivider: const SizedBox(height: 8),
+        listDivider: const SizedBox(width: 12),
+      ),
+    );
+  }
+
+  Widget _buildWebBoard(bool canWrite) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final stage in _stages) ...[
+            SizedBox(
+              width: 300,
+              child: Card(
+                margin: EdgeInsets.zero,
+                elevation: 2,
+                shadowColor: Colors.black.withValues(alpha: 0.08),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _ColumnHeader(
+                      stage: stage,
+                      color: stageColor(stage.key),
+                      count: (_byStage[stage.key] ?? []).length,
+                    ),
+                    Expanded(
+                      child: (_byStage[stage.key] ?? []).isEmpty
+                          ? _EmptyColumn(color: stageColor(stage.key))
+                          : ListView(
+                              padding: const EdgeInsets.all(10),
+                              children: [
+                                for (final p in _byStage[stage.key] ?? [])
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: _KanbanCard(
+                                      p: p,
+                                      color: stageColor(stage.key),
+                                      onTap: () => _openDetail(p),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (stage != _stages.last) const SizedBox(width: 12),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildHeader(bool canWrite) {
@@ -210,60 +290,6 @@ class _KanbanScreenState extends State<KanbanScreen> {
     );
   }
 }
-
-class _KanbanColumn extends StatelessWidget {
-  final StageSetting stage;
-  final List<Prospect> prospects;
-  final Color color;
-  final bool canWrite;
-  final Function(int, int) onReorder;
-  final Function(dynamic, int, int, int) onDragComplete;
-  final Function(Prospect) onTap;
-
-  const _KanbanColumn({
-    required this.stage,
-    required this.prospects,
-    required this.color,
-    required this.canWrite,
-    required this.onReorder,
-    required this.onDragComplete,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return DragAndDropList(
-      listIndex: _stages.indexWhere((s) => s.key == stage.key),
-      children: [
-        _ColumnHeader(stage: stage, color: color, count: prospects.length),
-        ...prospects.map((p) => DragAndDropItem(
-              data: p,
-              child: _KanbanCard(
-                prospect: p,
-                color: color,
-                onTap: () => onTap(p),
-              ),
-            )),
-        if (prospects.isEmpty)
-          _EmptyColumn(color: color),
-      ],
-      onReorder: onReorder,
-      onDragComplete: onDragComplete,
-      axis: Axis.vertical,
-      canBeDraggedTo: true,
-      bottomHeightWhenEmpty: 120,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-    );
-  }
-}
-
-List<StageSetting> _stages = [];
 
 class _ColumnHeader extends StatelessWidget {
   final StageSetting stage;

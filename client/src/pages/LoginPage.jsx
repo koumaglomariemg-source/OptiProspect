@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { Logo } from "../components/Logo.jsx";
 
 const HIGHLIGHTS = [
   {
@@ -59,11 +60,7 @@ export default function LoginPage() {
       {/* Panneau de marque */}
       <aside className="hidden flex-col justify-between bg-slate-950 p-12 text-white lg:flex">
         <div className="flex items-center gap-3">
-          <img
-            src="/icons/icon-192.png"
-            alt="OptiProspect"
-            className="h-10 w-10 rounded-xl object-cover shadow-sm"
-          />
+          <Logo size={40} variant="mark" />
           <div>
             <div className="text-base font-bold leading-tight">
               OptiProspect
@@ -99,7 +96,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs text-slate-500">
-          © 2026 OptiProspect — Tous droits réservés
+          
         </p>
       </aside>
 
@@ -107,11 +104,7 @@ export default function LoginPage() {
       <main className="flex items-center justify-center bg-slate-100 p-6">
         <div className="w-full max-w-sm pf-rise">
           <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-            <img
-              src="/icons/icon-192.png"
-              alt="OptiProspect"
-              className="h-10 w-10 rounded-xl object-cover shadow-sm"
-            />
+            <Logo size={40} variant="mark" />
             <span className="text-lg font-bold tracking-tight">
               OptiProspect
             </span>
@@ -119,7 +112,7 @@ export default function LoginPage() {
 
           <div className="mb-7">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Bon retour
+              Bienvenue
             </h1>
             <p className="mt-1.5 text-sm text-slate-500">
               Connectez-vous pour accéder à votre espace de travail.

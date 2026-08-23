@@ -166,7 +166,7 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
                           [p.company ?? '', 'créé le ${formatIsoDate(p.createdAt)}']
                               .where((s) => s.isNotEmpty && s != '—')
                               .join(' • '),
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),

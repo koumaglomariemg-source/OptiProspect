@@ -5,6 +5,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Upload,
 } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -43,6 +44,20 @@ export default function ProspectionPage() {
     }
   };
 
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const res = await api.importProspects(file);
+      alert(`Importé : ${res.created} prospect(s)${res.errors.length ? `, ${res.errors.length} erreur(s)` : ''}`);
+      load();
+    } catch (err) {
+      alert('Erreur import : ' + err.message);
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   useEffect(() => {
     const t = setTimeout(load, 250);
     return () => clearTimeout(t);
@@ -69,12 +84,18 @@ export default function ProspectionPage() {
               <RefreshCw size={14} /> Actualiser
             </button>
             {!isManager && (
-              <button
-                onClick={() => setFormOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-              >
-                <Plus size={16} /> Nouveau prospect
-              </button>
+              <>
+                <button
+                  onClick={() => setFormOpen(true)}
+                  className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                >
+                  <Plus size={16} /> Nouveau prospect
+                </button>
+                <label className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 cursor-pointer">
+                  <Upload size={16} /> Importer CSV
+                  <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+                </label>
+              </>
             )}
           </div>
         </div>

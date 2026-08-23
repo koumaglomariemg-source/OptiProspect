@@ -143,7 +143,7 @@ export default function TeamPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <div className="mx-auto max-w-7xl space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">Équipe</h1>
@@ -184,19 +184,19 @@ export default function TeamPage() {
           {users.map((u) => (
             <div
               key={u.id}
-              className="flex items-center gap-4 border-b border-slate-100 p-4 last:border-0 dark:border-slate-800"
+              className="flex flex-wrap items-center gap-4 border-b border-slate-100 p-4 last:border-0 dark:border-slate-800"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-base font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
                 {initials(u.name)}
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 min-w-[200px]">
                 <button
                   onClick={() => setDetailId(u.id)}
                   className="block w-full text-left"
                   title="Voir la fiche utilisateur"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-semibold">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="truncate text-base font-semibold">
                       {u.name}
                     </span>
                     {u.id === current?.id && (
@@ -205,9 +205,10 @@ export default function TeamPage() {
                       </span>
                     )}
                   </div>
-                  <div className="truncate text-xs text-slate-400">
-                    {u.email} · {u.prospect_count} prospects · inscrit le{" "}
-                    {formatDate(u.created_at)}
+                  <div className="flex flex-wrap gap-4 mt-1 text-xs text-slate-400">
+                    <span>{u.email}</span>
+                    <span>{u.prospect_count} prospects</span>
+                    <span>inscrit le {formatDate(u.created_at)}</span>
                   </div>
                   {u.role === "commercial" && (
                     <div className="mt-0.5 text-xs text-slate-400">
@@ -219,7 +220,7 @@ export default function TeamPage() {
                   )}
                 </button>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2 flex-wrap">
                 {u.role === "commercial" && (
                   <select
                     value={u.manager_id || ""}

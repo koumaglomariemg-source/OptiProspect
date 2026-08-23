@@ -7,14 +7,15 @@ import '../providers/theme_provider.dart';
 import 'audit_log_screen.dart';
 import 'clients_screen.dart';
 import 'dashboard_screen.dart';
+import 'day_screen.dart';
 import 'devis_screen.dart';
 import 'kanban_screen.dart';
 import 'meetings_screen.dart';
 import 'notifications_screen.dart';
+import 'map_screen.dart';
 import 'pipeline_templates_screen.dart';
 import 'portefeuilles_screen.dart';
 import 'profile_screen.dart';
-import 'prospection_screen.dart';
 import 'referentiels_screen.dart';
 import 'reports_screen.dart';
 import 'search_screen.dart';
@@ -59,23 +60,25 @@ class _MainShellState extends State<MainShell> {
       ];
     }
     if (u.isManager) {
-      return const [
-        Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
-        Destination(ProspectionScreen(), Icons.person_search_outlined, Icons.person_search, 'Prospection'),
-        Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche'),
-        Destination(DevisScreen(), Icons.request_quote_outlined, Icons.request_quote, 'Devis'),
-        Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients'),
-        Destination(PortefeuillesScreen(), Icons.people_alt_outlined, Icons.people_alt, 'Portefeuilles'),
-        Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports'),
-        Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions'),
-        Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil'),
+      return [
+        const Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
+        const Destination(DayScreen(), Icons.today_outlined, Icons.today, 'Ma journée'),
+        const Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche'),
+        const Destination(MapScreen(embedded: true), Icons.map_outlined, Icons.map, 'Carte'),
+        const Destination(DevisScreen(), Icons.request_quote_outlined, Icons.request_quote, 'Devis'),
+        const Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients'),
+        const Destination(PortefeuillesScreen(), Icons.people_alt_outlined, Icons.people_alt, 'Portefeuilles'),
+        const Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports'),
+        const Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions'),
+        const Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil'),
       ];
     }
     return const [
       Destination(KanbanScreen(), Icons.table_chart_outlined, Icons.table_chart, 'Tableau'),
       Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
-      Destination(ProspectionScreen(), Icons.person_search_outlined, Icons.person_search, 'Prospection'),
+      Destination(DayScreen(), Icons.today_outlined, Icons.today, 'Ma journée'),
       Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche'),
+      Destination(MapScreen(), Icons.map_outlined, Icons.map, 'Carte'),
       Destination(DevisScreen(), Icons.request_quote_outlined, Icons.request_quote, 'Devis'),
       Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients'),
       Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports'),
@@ -177,29 +180,38 @@ class _MainShellState extends State<MainShell> {
               if (value == 'profile') _openProfile();
               if (value == 'logout') auth.logout();
             },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'profile',
-                child: ListTile(
-                  leading: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface),
-                  title: Text('Profil', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+            itemBuilder: (context) {
+              final scheme = Theme.of(context).colorScheme;
+              return [
+                PopupMenuItem(
+                  value: 'profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: scheme.onSurface),
+                      const SizedBox(width: 12),
+                      Text('Profil', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'logout',
-                child: ListTile(
-                  leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-                  title: Text('Se déconnecter', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: scheme.error),
+                      const SizedBox(width: 12),
+                      Text('Se déconnecter', style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ];
+            },
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            color: Theme.of(context).colorScheme.surface,
             elevation: 8,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: CircleAvatar(
-                backgroundColor: kPrimary.withValues(alpha: 0.15),
+                backgroundColor: Colors.white,
                 child: Text(
                   user.initials(),
                   style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold, fontSize: 14),

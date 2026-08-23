@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
 
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
@@ -66,6 +68,58 @@ class _ProspectionScreenState extends State<ProspectionScreen> {
     }
   }
 
+  Future<void> _importCsv() async {
+    try {
+      final files = await FilePickerPlatform.instance.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+      if (files.isEmpty) return;
+      final file = files.first;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Import en cours…')));
+      final bytes = await file.readAsBytes();
+      final res = await _api.importProspects(bytes);
+      _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Importé : ${res['created']} prospect(s)${(res['errors'] as List).isNotEmpty ? ', ${res['errors'].length} erreur(s)' : ''}'),
+          duration: const Duration(seconds: 4),
+          action: (res['errors'] as List).isNotEmpty
+              ? SnackBarAction(
+                  label: 'Voir erreurs',
+                  onPressed: () {
+                    final errors = res['errors'] as List;
+                    showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('Erreurs d\'import'),
+                        content: SizedBox(
+                          width: double.maxFinite,
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: errors.length,
+                            separatorBuilder: (_, __) => const Divider(),
+                            itemBuilder: (_, i) => ListTile(
+                              dense: true,
+                              title: Text('Ligne ${errors[i]['row']}'),
+                              subtitle: Text(errors[i]['error']),
+                            ),
+                          ),
+                        ),
+                        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                      ),
+                    );
+                  },
+                )
+              : null,
+        ),
+      );
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur import : $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -85,9 +139,16 @@ class _ProspectionScreenState extends State<ProspectionScreen> {
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                           child: TextField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Rechercher…',
-                              prefixIcon: Icon(Icons.search),
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: canWrite
+                                  ? IconButton(
+                                      icon: const Icon(Icons.upload_file),
+                                      tooltip: 'Importer CSV',
+                                      onPressed: _importCsv,
+                                    )
+                                  : null,
                               isDense: true,
                             ),
                             onChanged: (v) {
@@ -118,7 +179,7 @@ class _ProspectionScreenState extends State<ProspectionScreen> {
                             _prospects == null
                                 ? ''
                                 : '${_prospects!.length} prospect(s)',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
                         ),
                       ),
@@ -207,7 +268,7 @@ class _ProspectionScreenState extends State<ProspectionScreen> {
                       Text(p.company!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 6),
                     if (p.stepsTotal > 0)
                       Row(

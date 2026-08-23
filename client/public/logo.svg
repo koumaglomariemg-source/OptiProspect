@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle with gradient -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad)" filter="url(#glow)"/>
+  
+  <!-- Inner subtle ring -->
+  <circle cx="64" cy="64" r="56" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  
+  <!-- O Letter - Outer ring with gap -->
+  <path d="M38 64 
+           A26 26 0 1 1 90 64 
+           A26 26 0 1 1 38 64" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="5" 
+        stroke-linecap="round"
+        stroke-dasharray="140 20"
+        transform="rotate(-15 64 64)"
+  />
+  
+  <!-- P Letter - Vertical stem + bowl -->
+  <g transform="translate(20, 0)">
+    <!-- P stem -->
+    <path d="M54 38 V90" 
+          fill="none" 
+          stroke="white" 
+          stroke-width="5" 
+          stroke-linecap="round"
+    />
+    <!-- P bowl -->
+    <path d="M54 42 
+             C74 42 86 54 86 68 
+             C86 82 74 94 54 94" 
+          fill="none" 
+          stroke="white" 
+          stroke-width="5" 
+          stroke-linecap="round"
+          stroke-linejoin="round"
+    />
+  </g>
+  
+  <!-- Connecting element between O and P - subtle arrow/progress indicator -->
+  <path d="M78 58 L86 64 L78 70" 
+        fill="none" 
+        stroke="rgba(255,255,255,0.9)" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+  />
+  
+  <!-- Accent dot -->
+  <circle cx="86" cy="64" r="3" fill="#ec4899"/>
+</svg>

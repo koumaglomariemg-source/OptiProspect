@@ -1,4 +1,5 @@
 import '../utils/formatters.dart';
+import 'meeting.dart';
 import 'prospect.dart';
 
 class CountSlice {
@@ -87,6 +88,11 @@ class ByUserStat {
   final int lost;
   final int advanced;
   final double value;
+  final double openValue;
+  final int relancesLate;
+  final int calls;
+  final int meetingsCount;
+  final int avgCycleDays;
 
   const ByUserStat({
     required this.id,
@@ -97,6 +103,11 @@ class ByUserStat {
     this.lost = 0,
     this.advanced = 0,
     this.value = 0,
+    this.openValue = 0,
+    this.relancesLate = 0,
+    this.calls = 0,
+    this.meetingsCount = 0,
+    this.avgCycleDays = 0,
   });
 
   factory ByUserStat.fromJson(Map<String, dynamic> json) {
@@ -109,6 +120,11 @@ class ByUserStat {
       lost: toInt(json['lost']) ?? 0,
       advanced: toInt(json['advanced']) ?? 0,
       value: toDouble(json['value']) ?? 0,
+      openValue: toDouble(json['open_value']) ?? 0,
+      relancesLate: toInt(json['relances_late']) ?? 0,
+      calls: toInt(json['calls']) ?? 0,
+      meetingsCount: toInt(json['meetings_count']) ?? 0,
+      avgCycleDays: toInt(json['avg_cycle_days']) ?? 0,
     );
   }
 }
@@ -244,6 +260,286 @@ class ClientInfo {
       totalValide: toDouble(json['total_valide']) ?? 0,
       interactions: toInt(json['interactions']) ?? 0,
       lastInteraction: json['last_interaction'] as String?,
+    );
+  }
+}
+
+class AtRiskItem {
+  final int id;
+  final String name;
+  final String? company;
+  final double value;
+  final String? temperature;
+  final String reason;
+  final int days;
+  final String? assigneeName;
+  final String? nextAction;
+  final String? nextActionDate;
+  final String? devisRef;
+
+  const AtRiskItem({
+    required this.id,
+    required this.name,
+    this.company,
+    this.value = 0,
+    this.temperature,
+    this.reason = 'overdue',
+    this.days = 0,
+    this.assigneeName,
+    this.nextAction,
+    this.nextActionDate,
+    this.devisRef,
+  });
+
+  String get reasonLabel => switch (reason) {
+        'overdue' => 'Relance en retard',
+        'stalled' => 'Sans activité',
+        'pending_validation' => 'Devis à valider',
+        _ => reason,
+      };
+
+  factory AtRiskItem.fromJson(Map<String, dynamic> json) {
+    return AtRiskItem(
+      id: toInt(json['id']) ?? 0,
+      name: json['name'] as String? ?? '',
+      company: json['company'] as String?,
+      value: toDouble(json['value']) ?? 0,
+      temperature: json['temperature'] as String?,
+      reason: json['reason'] as String? ?? 'overdue',
+      days: toInt(json['days']) ?? 0,
+      assigneeName: json['assignee_name'] as String?,
+      nextAction: json['next_action'] as String?,
+      nextActionDate: json['next_action_date'] as String?,
+      devisRef: json['devis_ref'] as String?,
+    );
+  }
+}
+
+class AgingBucket {
+  final String key;
+  final String label;
+  final int n;
+  final double value;
+
+  const AgingBucket({
+    required this.key,
+    required this.label,
+    this.n = 0,
+    this.value = 0,
+  });
+
+  factory AgingBucket.fromJson(Map<String, dynamic> json) {
+    return AgingBucket(
+      key: json['key'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+      n: toInt(json['n']) ?? 0,
+      value: toDouble(json['value']) ?? 0,
+    );
+  }
+}
+
+class AgingStats {
+  final int total;
+  final int avgAgeDays;
+  final List<AgingBucket> buckets;
+
+  const AgingStats({this.total = 0, this.avgAgeDays = 0, this.buckets = const []});
+
+  factory AgingStats.fromJson(Map<String, dynamic> json) {
+    return AgingStats(
+      total: toInt(json['total']) ?? 0,
+      avgAgeDays: toInt(json['avg_age_days']) ?? 0,
+      buckets: (json['buckets'] as List?)
+              ?.map((e) => AgingBucket.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+    );
+  }
+}
+
+class DayRelance {
+  final int id;
+  final String name;
+  final String? company;
+  final double value;
+  final String? temperature;
+  final String? nextAction;
+  final String? nextActionDate;
+  final String? assigneeName;
+  final int? dueInDays;
+  final bool isToday;
+
+  const DayRelance({
+    required this.id,
+    required this.name,
+    this.company,
+    this.value = 0,
+    this.temperature,
+    this.nextAction,
+    this.nextActionDate,
+    this.assigneeName,
+    this.dueInDays,
+    this.isToday = false,
+  });
+
+  factory DayRelance.fromJson(Map<String, dynamic> json) {
+    return DayRelance(
+      id: toInt(json['id']) ?? 0,
+      name: json['name'] as String? ?? '',
+      company: json['company'] as String?,
+      value: toDouble(json['value']) ?? 0,
+      temperature: json['temperature'] as String?,
+      nextAction: json['next_action'] as String?,
+      nextActionDate: json['next_action_date'] as String?,
+      assigneeName: json['assignee_name'] as String?,
+      dueInDays: toInt(json['due_in_days']),
+      isToday: (json['is_today'] as bool?) ?? false,
+    );
+  }
+}
+
+class DayDevis {
+  final int id;
+  final String reference;
+  final String titre;
+  final double montant;
+  final String statut;
+  final String? prospectName;
+
+  const DayDevis({
+    required this.id,
+    required this.reference,
+    required this.titre,
+    this.montant = 0,
+    this.statut = 'attente_validation',
+    this.prospectName,
+  });
+
+  factory DayDevis.fromJson(Map<String, dynamic> json) {
+    return DayDevis(
+      id: toInt(json['id']) ?? 0,
+      reference: json['reference'] as String? ?? '',
+      titre: json['titre'] as String? ?? '',
+      montant: toDouble(json['montant']) ?? 0,
+      statut: json['statut'] as String? ?? 'attente_validation',
+      prospectName: json['prospect_name'] as String?,
+    );
+  }
+}
+
+class DayInteraction {
+  final int id;
+  final String prospectName;
+  final String type;
+  final String content;
+  final String? createdAt;
+
+  const DayInteraction({
+    required this.id,
+    required this.prospectName,
+    this.type = 'note',
+    this.content = '',
+    this.createdAt,
+  });
+
+  factory DayInteraction.fromJson(Map<String, dynamic> json) {
+    return DayInteraction(
+      id: toInt(json['id']) ?? 0,
+      prospectName: json['prospect_name'] as String? ?? '',
+      type: json['type'] as String? ?? 'note',
+      content: json['content'] as String? ?? '',
+      createdAt: json['created_at'] as String?,
+    );
+  }
+}
+
+class DayProspect {
+  final int id;
+  final String name;
+  final String? company;
+  final double value;
+  final String? temperature;
+  final String? assigneeName;
+  final String? lastInteraction;
+  final String? createdAt;
+
+  const DayProspect({
+    required this.id,
+    required this.name,
+    this.company,
+    this.value = 0,
+    this.temperature,
+    this.assigneeName,
+    this.lastInteraction,
+    this.createdAt,
+  });
+
+  factory DayProspect.fromJson(Map<String, dynamic> json) {
+    return DayProspect(
+      id: toInt(json['id']) ?? 0,
+      name: json['name'] as String? ?? '',
+      company: json['company'] as String?,
+      value: toDouble(json['value']) ?? 0,
+      temperature: json['temperature'] as String?,
+      assigneeName: json['assignee_name'] as String?,
+      lastInteraction: json['last_interaction'] as String?,
+      createdAt: json['created_at'] as String?,
+    );
+  }
+}
+
+class DayData {
+  final List<DayRelance> relances;
+  final List<Meeting> meetings;
+  final List<DayDevis> devis;
+  final List<DayInteraction> recentInteractions;
+  final List<AtRiskItem> atRisk;
+  final List<DayProspect> toTreat;
+  final Map<String, dynamic> counts;
+
+  const DayData({
+    this.relances = const [],
+    this.meetings = const [],
+    this.devis = const [],
+    this.recentInteractions = const [],
+    this.atRisk = const [],
+    this.toTreat = const [],
+    this.counts = const {},
+  });
+
+  int get countRelancesToday => toInt(counts['relances_today']) ?? 0;
+  int get countMeetings => toInt(counts['meetings']) ?? 0;
+  int get countDevisPending => toInt(counts['devis_pending']) ?? 0;
+  int get countAtRisk => toInt(counts['at_risk']) ?? 0;
+  int get countToTreat => toInt(counts['to_treat']) ?? 0;
+
+  factory DayData.fromJson(Map<String, dynamic> json) {
+    return DayData(
+      relances: (json['relances'] as List?)
+              ?.map((e) => DayRelance.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      meetings: (json['meetings'] as List?)
+              ?.map((e) => Meeting.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      devis: (json['devis'] as List?)
+              ?.map((e) => DayDevis.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      recentInteractions: (json['recent_interactions'] as List?)
+              ?.map((e) => DayInteraction.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      atRisk: (json['at_risk'] as List?)
+              ?.map((e) => AtRiskItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      toTreat: (json['to_treat'] as List?)
+              ?.map((e) => DayProspect.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      counts: (json['counts'] as Map<String, dynamic>?) ?? const {},
     );
   }
 }

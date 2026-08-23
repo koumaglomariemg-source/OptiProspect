@@ -1,4 +1,4 @@
-const CACHE = 'optiprospect-v2';
+const CACHE = 'optiprospect-v4';
 const PRECACHE = ['/', '/index.html', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {

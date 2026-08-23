@@ -176,7 +176,7 @@ class _ReferentielsScreenState extends State<ReferentielsScreen> {
               children: [
                 for (final item in items)
                   Chip(
-                    avatar: Icon(icon, size: 16, color: Colors.grey),
+                    avatar: Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     label: Text(item),
                   ),
               ],

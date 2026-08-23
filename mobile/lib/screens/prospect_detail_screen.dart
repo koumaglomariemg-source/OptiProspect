@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_theme.dart';
 import '../models/models.dart';
@@ -510,7 +511,7 @@ class _InteractionsTabState extends State<_InteractionsTab> {
                                   [formatIsoDateTime(it.interactionDate), it.userName ?? '']
                                       .where((s) => s.isNotEmpty && s != '—')
                                       .join(' • '),
-                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -594,7 +595,7 @@ class _HistoryTabState extends State<_HistoryTab> {
                           [formatIsoDateTime(e.createdAt), e.userName ?? '']
                               .where((s) => s.isNotEmpty && s != '—')
                               .join(' • '),
-                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       );
                     },
@@ -737,6 +738,7 @@ class _MessagesTabState extends State<_MessagesTab> {
   MessageSuggestion? _suggestion;
   String? _error;
   bool _loading = false;
+  bool _sending = false;
 
   ApiClient get _api => context.read<AuthProvider>().api;
 
@@ -761,9 +763,10 @@ class _MessagesTabState extends State<_MessagesTab> {
       padding: const EdgeInsets.all(16),
       children: [
         if (!widget.canWrite)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text('Vous êtes en lecture seule.', style: TextStyle(color: Colors.grey)),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text('Vous êtes en lecture seule.',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
         FilledButton.icon(
           onPressed: _loading ? null : _generate,
@@ -787,15 +790,16 @@ class _MessagesTabState extends State<_MessagesTab> {
               ),
             ),
           const SizedBox(height: 12),
-          _messageCard('Email', _suggestion!.email),
-          _messageCard('WhatsApp', _suggestion!.whatsapp),
-          _messageCard('LinkedIn', _suggestion!.linkedin),
+          _messageCard('Email', 'email', _suggestion!.email),
+          _messageCard('WhatsApp', 'whatsapp', _suggestion!.whatsapp),
+          _messageCard('LinkedIn', 'linkedin', _suggestion!.linkedin),
         ],
       ],
     );
   }
 
-  Widget _messageCard(String title, String? content) {
+  Widget _messageCard(String title, String channel, String? content) {
+    final canSend = widget.canWrite && content != null && content.isNotEmpty;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -807,28 +811,146 @@ class _MessagesTabState extends State<_MessagesTab> {
             padding: const EdgeInsets.all(12),
             child: Text(content ?? 'Contenu vide', style: const TextStyle(fontSize: 13)),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: content == null
-                    ? null
-                    : () async {
-                        await Clipboard.setData(ClipboardData(text: content));
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Message copié')),
-                          );
-                        }
-                      },
-                icon: const Icon(Icons.copy_all, size: 16),
-                label: const Text('Copier'),
-              ),
-              const SizedBox(width: 8),
-            ],
+          Padding(
+            padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              alignment: WrapAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: content == null
+                      ? null
+                      : () async {
+                          await Clipboard.setData(ClipboardData(text: content));
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Message copié')),
+                            );
+                          }
+                        },
+                  icon: const Icon(Icons.copy_all, size: 16),
+                  label: const Text('Copier'),
+                ),
+                if (canSend && channel == 'email') ...[
+                  OutlinedButton.icon(
+                    onPressed: () => _launchMailto(content),
+                    icon: const Icon(Icons.mail_outline, size: 16),
+                    label: const Text('Ouvrir'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: _sending ? null : () => _sendByEmail(content),
+                    icon: const Icon(Icons.send, size: 16),
+                    label: Text(_sending ? 'Envoi…' : 'Envoyer'),
+                  ),
+                ],
+                if (canSend && channel == 'whatsapp')
+                  FilledButton.icon(
+                    onPressed: () => _launchWhatsApp(content),
+                    icon: const Icon(Icons.chat, size: 16),
+                    label: const Text('Envoyer par WhatsApp'),
+                  ),
+                if (canSend && channel == 'linkedin')
+                  OutlinedButton.icon(
+                    onPressed: () => _launchLinkedIn(),
+                    icon: const Icon(Icons.link, size: 16),
+                    label: const Text('Ouvrir'),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _launch(Uri uri, String errorMsg) async {
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$errorMsg : $e')));
+      }
+    }
+  }
+
+  Future<void> _launchMailto(String content) async {
+    final email = widget.prospect.email;
+    if (email == null || email.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pas d'email renseigné")));
+      }
+      return;
+    }
+    final uri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: {
+        'subject': _suggestion?.subject ?? 'Contact ${widget.prospect.name}',
+        'body': content,
+      },
+    );
+    await _launch(uri, "Impossible d'ouvrir l'application email");
+  }
+
+  Future<void> _launchWhatsApp(String content) async {
+    final phone = widget.prospect.phone;
+    if (phone == null || phone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pas de téléphone renseigné')),
+        );
+      }
+      return;
+    }
+    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
+    final uri = Uri.parse('https://wa.me/$digits?text=${Uri.encodeComponent(content)}');
+    await _launch(uri, "WhatsApp n'est pas installé");
+  }
+
+  Future<void> _launchLinkedIn() async {
+    final linkedin = widget.prospect.linkedin;
+    if (linkedin == null || linkedin.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pas de profil LinkedIn renseigné')),
+        );
+      }
+      return;
+    }
+    final uri = Uri.parse(
+      linkedin.startsWith('http') ? linkedin : 'https://www.linkedin.com/in/$linkedin',
+    );
+    await _launch(uri, "Impossible d'ouvrir le profil LinkedIn");
+  }
+
+  Future<void> _sendByEmail(String content) async {
+    setState(() => _sending = true);
+    try {
+      final result = await _api.sendMessage(widget.prospect.id, {
+        'channel': 'email',
+        'subject': _suggestion?.subject,
+        'content': content,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.delivered
+              ? 'Message envoyé par email ✓'
+              : result.skipped
+                  ? 'Envoi non effectué : ${result.reason ?? 'SMTP non configuré'}'
+                  : "Échec de l'envoi"),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 }

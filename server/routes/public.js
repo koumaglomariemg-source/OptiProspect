@@ -43,7 +43,7 @@ router.post('/contact', ah(async (req, res) => {
     const arr = JSON.parse(row?.value || '[]');
     if (Array.isArray(arr) && arr.length) stageKeys = arr.map((s) => s.key);
   } catch {}
-  stageKeys = stageKeys || ['nouveau', 'qualification', 'suivi', 'conversion', 'perdu'];
+  stageKeys = stageKeys || ['etablissements_identifies', 'prospection', 'suivi', 'contrat_depose', 'contrat_signe'];
 
   const template = await getDefaultTemplate();
   const firstStep = template ? (await getTemplateSteps(template.id))[0] : null;

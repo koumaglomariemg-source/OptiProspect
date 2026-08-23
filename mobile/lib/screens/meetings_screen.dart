@@ -154,7 +154,8 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               children: [
                 Column(
                   children: [
-                    Text(dayStr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    Text(dayStr,
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     Text('${start?.day ?? ''}',
                         style: const TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo)),
@@ -171,7 +172,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                           overflow: TextOverflow.ellipsis),
                       Text(
                         [timeStr, m.location ?? ''].where((s) => s.isNotEmpty).join(' • '),
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -190,7 +191,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.videocam_outlined, size: 16, color: Colors.grey),
+                  Icon(Icons.videocam_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(m.meetingLink!,
@@ -209,14 +210,14 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.group_outlined, size: 16, color: Colors.grey),
+                  Icon(Icons.group_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       m.participants.map((p) => p.name).join(', '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ),
                 ],
@@ -225,7 +226,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
             if (m.createdByName != null) ...[
               const SizedBox(height: 4),
               Text('Créée par : ${m.createdByName}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ],
         ),

@@ -163,7 +163,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Row(
               children: [
                 Text('$_total prospect(s)',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 if (_hasActiveFilters) ...[
                   const SizedBox(width: 8),
                   const Badge(label: 'Filtres actifs', color: Colors.indigo),
@@ -391,7 +391,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           .join(' • '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),

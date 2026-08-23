@@ -197,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         Badge(label: kRoleLabels[user.role] ?? user.role, color: kPrimary),
                         const SizedBox(height: 6),
-                        Text(user.email, style: const TextStyle(color: Colors.grey)),
+                        Text(user.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       ],
                     ),
                   ),

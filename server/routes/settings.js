@@ -7,7 +7,7 @@ import { logAudit } from '../services/audit.js';
 const router = Router();
 router.use(auth());
 
-const KEYS = ['stages', 'products', 'zones', 'refusal_reasons'];
+const KEYS = ['stages', 'products', 'zones', 'refusal_reasons', 'automations_enabled', 'automation_relance_days', 'automation_inactive_days'];
 
 router.get('/', ah(async (req, res) => {
   const rows = await db.all('SELECT \`key\`, value FROM settings');
@@ -31,8 +31,13 @@ router.put('/:key', ah(async (req, res) => {
   if (req.user.role === 'commercial') return res.status(403).json({ error: 'Accès réservé aux managers et administrateurs' });
 
   let value;
-  if (!Array.isArray(req.body.value)) return res.status(400).json({ error: 'Valeur invalide' });
-  value = JSON.stringify(req.body.value);
+  if (key === 'automations_enabled' || key === 'automation_inactive_days') {
+    value = String(req.body.value);
+  } else if (!Array.isArray(req.body.value)) {
+    return res.status(400).json({ error: 'Valeur invalide' });
+  } else {
+    value = JSON.stringify(req.body.value);
+  }
   await db.run('INSERT INTO settings (\`key\`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)',
     key, value);
   logAudit(req, `settings.update.${key}`);

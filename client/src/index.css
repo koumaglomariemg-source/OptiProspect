@@ -38,3 +38,52 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 @keyframes pf-rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 .pf-rise { animation: pf-rise .35s var(--ease-out-quart) both; }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms!important; transition-duration:.001ms!important; } }
+
+/* Carte des prospects (Leaflet) */
+.pf-marker { background: transparent; border: none; }
+.pf-marker-wrap {
+  display: flex; align-items: center; gap: 6px;
+  width: max-content; pointer-events: none;
+}
+.pf-marker-wrap.hide-label .pf-marker-label { display: none; }
+.pf-marker-dot {
+  width: 34px; height: 34px; border-radius: 9999px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 10px; font-weight: 700;
+  border: 3px solid #fff; box-shadow: 0 2px 6px rgba(15,23,42,.3);
+  cursor: pointer; pointer-events: auto;
+}
+.pf-marker-label {
+  background: rgba(255,255,255,.94); color: #0f172a;
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 2px 8px; font-size: 11px; font-weight: 600;
+  white-space: nowrap; box-shadow: 0 1px 4px rgba(15,23,42,.18);
+  max-width: 230px; overflow: hidden; text-overflow: ellipsis;
+}
+.dark .pf-marker-label { background: rgba(15,23,42,.92); color: #f1f5f9; border-color: #334155; }
+.dark .pf-marker-dot { border-color: #0f172a; }
+.leaflet-container { background: #e8ecf4; font-family: inherit; }
+.dark .leaflet-container { background: #0f172a; }
+.pf-popup { line-height: 1.4; }
+.pf-popup-name { font-weight: 700; font-size: 14px; color: #0f172a; }
+.dark .pf-popup-name { color: #f1f5f9; }
+.pf-popup-sub { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+.dark .pf-popup-sub { color: #94a3b8; }
+.pf-popup-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.pf-popup-badge {
+  display: inline-flex; align-items: center; padding: 2px 8px;
+  border-radius: 9999px; font-size: 11px; font-weight: 600;
+  border: 1px solid #e2e8f0; background: #f8fafc; color: #475569;
+}
+.dark .pf-popup-badge { border-color: #334155; background: #1e293b; color: #cbd5e1; }
+.pf-popup-addr { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+.dark .pf-popup-addr { color: #94a3b8; }
+.pf-popup-btn {
+  width: 100%; border-radius: 10px; border: none; cursor: pointer;
+  background: #2a4ec4; color: #fff; font-size: 13px; font-weight: 600;
+  padding: 8px 12px;
+}
+.pf-popup-btn:hover { background: #2340a1; }
+.leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: 0 12px 30px -20px rgba(15,23,42,.35); }
+.dark .leaflet-popup-content-wrapper { background: #1e293b; }
+.dark .leaflet-popup-tip { background: #1e293b; }

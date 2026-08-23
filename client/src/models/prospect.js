@@ -52,7 +52,7 @@ export function createProspect(data = {}) {
     source: '',
     value: 0,
     score: 0,
-    stage: 'nouveau',
+    stage: 'etablissements_identifies',
     temperature: 'tiede',
     secteur: null,
     adresse: null,

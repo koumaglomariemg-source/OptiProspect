@@ -225,7 +225,7 @@ class _DevisScreenState extends State<DevisScreen> {
                 [d.createdByName ?? '', formatIsoDateTime(d.createdAt)]
                     .where((s) => s.isNotEmpty && s != '—')
                     .join(' • '),
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ],
           ),

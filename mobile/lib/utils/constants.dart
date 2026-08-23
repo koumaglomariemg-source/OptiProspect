@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 const kStages = [
-  'nouveau',
-  'qualification',
+  'identification',
+  'prospection',
   'suivi',
-  'conversion',
-  'perdu',
+  'depot_contrat',
+  'signature_contrat',
 ];
 
 const kStageLabels = {
-  'nouveau': 'Nouveau',
-  'qualification': 'Qualification',
+  'identification': 'Identification',
+  'prospection': 'Prospection',
   'suivi': 'Suivi',
-  'conversion': 'Conversion',
-  'perdu': 'Perdu',
+  'depot_contrat': 'Dépôt de contrat',
+  'signature_contrat': 'Signature de contrat',
 };
 
 const kSourceLabels = {
@@ -97,16 +97,16 @@ const kStageColors = [
 
 Color stageColor(String stage) {
   switch (stage) {
-    case 'nouveau':
+    case 'identification':
       return Colors.blue;
-    case 'qualification':
-      return Colors.orange;
+    case 'prospection':
+      return Colors.indigo;
     case 'suivi':
+      return Colors.orange;
+    case 'depot_contrat':
       return Colors.purple;
-    case 'conversion':
+    case 'signature_contrat':
       return Colors.green;
-    case 'perdu':
-      return Colors.red;
     default:
       return Colors.grey;
   }

@@ -42,6 +42,9 @@ mobile/.flutter-plugins-dependencies
 node_modules/
 server/node_modules/
 
+# Client build
+client/dist/
+
 # Server
 server/dist/
 server/*.log

@@ -19,7 +19,9 @@ import reminderRoutes from './routes/reminders.js';
 import templateRoutes from './routes/pipeline-templates.js';
 import stepRoutes from './routes/steps.js';
 import meetingRoutes from './routes/meetings.js';
+import dayRoutes from './routes/day.js';
 import { checkAllReminders } from './services/reminders.js';
+import { runFollowUpSequences } from './services/automations.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT_DIST = path.join(__dirname, '..', 'client', 'dist');
@@ -56,7 +58,9 @@ async function ensureAdmin() {
 await initDb();
 await ensureAdmin();
 checkAllReminders().catch(() => {});
+runFollowUpSequences().catch(() => {});
 setInterval(() => checkAllReminders().catch(() => {}), 60 * 1000);
+setInterval(() => runFollowUpSequences().catch(() => {}), 60 * 1000);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api/public', publicRoutes);
@@ -73,6 +77,7 @@ app.use('/api/reminders', reminderRoutes);
 app.use('/api/pipeline-templates', templateRoutes);
 app.use('/api', stepRoutes);
 app.use('/api/meetings', meetingRoutes);
+app.use('/api/day', dayRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

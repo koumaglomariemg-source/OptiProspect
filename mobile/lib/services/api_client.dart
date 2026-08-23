@@ -201,6 +201,10 @@ class ApiClient {
     await delete('/api/prospects/$id');
   }
 
+  Future<void> updateProspectStage(int id, String stage) async {
+    await patch('/api/prospects/$id', body: {'stage': stage});
+  }
+
   Future<Prospect> markRelanceDone(int id) async {
     final data = await post('/api/prospects/$id/relance-done');
     return Prospect.fromJson(data as Map<String, dynamic>);
@@ -378,6 +382,21 @@ class ApiClient {
     return _rows(data).map((e) => ClientInfo.fromJson(e)).toList();
   }
 
+  Future<List<AtRiskItem>> statsAtRisk([Map<String, dynamic> params = const {}]) async {
+    final data = await get('/api/stats/at-risk', query: params.isEmpty ? null : params);
+    return _rows(data).map((e) => AtRiskItem.fromJson(e)).toList();
+  }
+
+  Future<AgingStats> statsAging([Map<String, dynamic> params = const {}]) async {
+    final data = await get('/api/stats/aging', query: params.isEmpty ? null : params);
+    return AgingStats.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<DayData> day() async {
+    final data = await get('/api/day');
+    return DayData.fromJson(data as Map<String, dynamic>);
+  }
+
   Future<void> setTarget(int userId, String yearMonth, double targetValue) async {
     await put('/api/users/$userId/target',
         body: {'year_month': yearMonth, 'target_value': targetValue});
@@ -477,5 +496,15 @@ class ApiClient {
 
   Future<void> deleteUser(int id) async {
     await delete('/api/users/$id');
+  }
+
+  Future<Map<String, dynamic>> importProspects(List<int> bytes) async {
+    final uri = Uri.parse('$baseUrl/api/prospects/import');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll(_headers())
+      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: 'prospects.csv'));
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    return _decode(response);
   }
 }

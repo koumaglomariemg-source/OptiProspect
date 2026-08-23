@@ -333,7 +333,7 @@ class _TeamScreenState extends State<TeamScreen> {
                         [kRoleLabels[u.role] ?? u.role, u.email]
                             .where((s) => s.isNotEmpty)
                             .join(' • '),
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -379,7 +379,7 @@ class _TeamScreenState extends State<TeamScreen> {
           Text(value,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           Text(label,
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ],

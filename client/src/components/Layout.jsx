@@ -22,6 +22,7 @@ import {
   X,
   CalendarClock,
   Clock,
+  MapPinned,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api.js";
@@ -29,6 +30,7 @@ import NotificationsDropdown from "./NotificationsDropdown.jsx";
 import { initials, ROLE_LABEL } from "../constants.js";
 import { flushQueue, getPendingOps, isOnline } from "../offline.js";
 import useIsMobile from "../hooks/useIsMobile.js";
+import { Logo } from "./Logo.jsx";
 
 function useTheme() {
   const [dark, setDark] = useState(
@@ -79,6 +81,12 @@ const NAV = [
     roles: ["commercial", "manager", "admin"],
   },
   {
+    to: "/journee",
+    label: "Ma journée",
+    icon: CalendarClock,
+    roles: ["commercial", "manager"],
+  },
+  {
     to: "/prospection",
     label: "Prospection",
     icon: ClipboardList,
@@ -88,6 +96,12 @@ const NAV = [
     to: "/recherche",
     label: "Recherche",
     icon: Search,
+    roles: ["commercial", "manager"],
+  },
+  {
+    to: "/carte",
+    label: "Carte",
+    icon: MapPinned,
     roles: ["commercial", "manager"],
   },
   {
@@ -161,6 +175,12 @@ function mobileTabs(role) {
       to: "/recherche",
       label: "Recherche",
       icon: Search,
+      roles: ["commercial", "manager"],
+    },
+    {
+      to: "/carte",
+      label: "Carte",
+      icon: MapPinned,
       roles: ["commercial", "manager"],
     },
     {
@@ -246,23 +266,30 @@ export default function Layout({ children }) {
   }, []);
 
   const handleLogout = () => {
-    logout();
-    navigate("/login");
+    if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
+      logout();
+      navigate("/login");
+    }
   };
 
   const navContent = (
     <>
       <div className="flex items-center gap-3 px-5 py-5">
-        <img
-          src="/icons/icon-192.png"
-          alt="OptiProspect"
-          className="h-9 w-9 rounded-xl object-cover shadow-sm"
-        />
+        <Logo size={36} variant="mark" />
         {!sidebarCollapsed && (
           <div>
             <div className="text-base font-bold leading-tight text-white">OptiProspect</div>
             <div className="text-xs text-slate-400">Gestion de prospection</div>
           </div>
+        )}
+        {!sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(true)}
+            title="Réduire la barre latérale"
+            className="ml-auto hidden rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white lg:block"
+          >
+            <X size={18} />
+          </button>
         )}
       </div>
       <nav className="mt-2 flex flex-col gap-1 px-3">
@@ -350,13 +377,15 @@ export default function Layout({ children }) {
           >
             <Menu size={20} />
           </button>
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? "Étendre la barre latérale" : "Réduire la barre latérale"}
-            className="hidden rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:flex dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            {sidebarCollapsed ? <Menu size={20} /> : <X size={20} />}
-          </button>
+          {sidebarCollapsed && (
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              title="Étendre la barre latérale"
+              className="hidden rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:flex dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <Menu size={20} />
+            </button>
+          )}
           {user?.role !== "admin" && (
             <form
               onSubmit={(e) => {

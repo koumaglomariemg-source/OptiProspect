@@ -43,7 +43,7 @@ export default function ProspectFormModal({ prospect, onClose, onSaved }) {
     linkedin: prospect?.linkedin || "",
     source: prospect?.source || "site",
     value: prospect?.value || 0,
-    stage: prospect?.stage || "nouveau",
+    stage: prospect?.stage || "etablissements_identifies",
     secteur: prospect?.secteur || "",
     product: prospect?.product || "",
     adresse: prospect?.adresse || "",

@@ -158,7 +158,7 @@ class _PipelineTemplatesScreenState extends State<PipelineTemplatesScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(t.description!,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
             const Divider(height: 20),
             for (var i = 0; i < t.steps.length; i++)
@@ -170,7 +170,7 @@ class _PipelineTemplatesScreenState extends State<PipelineTemplatesScreen> {
                       width: 20,
                       child: Text('${i + 1}',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ),
                     Container(
                       width: 10,
@@ -188,7 +188,7 @@ class _PipelineTemplatesScreenState extends State<PipelineTemplatesScreen> {
                           style: const TextStyle(fontSize: 13.5)),
                     ),
                     Text('${t.steps[i].formFields.length} champ(s)',
-                        style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   ],
                 ),
               ),
@@ -585,10 +585,10 @@ class _TemplateFormScreenState extends State<TemplateFormScreen> {
               ],
             ),
             if (s.fields.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text('Aucun champ.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
             for (var fi = 0; fi < s.fields.length; fi++)
               _fieldCard(si, fi),

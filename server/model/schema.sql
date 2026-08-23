@@ -173,7 +173,7 @@ CREATE TABLE `prospects` (
   `source` varchar(50) DEFAULT 'site',
   `value` double DEFAULT 0,
   `score` int(11) DEFAULT 0,
-  `stage` varchar(100) NOT NULL DEFAULT 'nouveau',
+  `stage` varchar(100) NOT NULL DEFAULT 'suspect',
   `temperature` varchar(50) DEFAULT 'tiede',
   `secteur` varchar(191) DEFAULT NULL,
   `adresse` text DEFAULT NULL,

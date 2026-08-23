@@ -37,7 +37,7 @@ export const SCHEMA_DDL = [
     source VARCHAR(50) DEFAULT 'site',
     value DOUBLE DEFAULT 0,
     score INT DEFAULT 0,
-    stage VARCHAR(100) NOT NULL DEFAULT 'nouveau',
+    stage VARCHAR(100) NOT NULL DEFAULT 'suspect',
     temperature VARCHAR(50) DEFAULT 'tiede',
     secteur VARCHAR(191),
     adresse TEXT,
@@ -231,6 +231,15 @@ export const SCHEMA_DDL = [
     CONSTRAINT fk_mp_meeting FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE,
     CONSTRAINT fk_mp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+  `CREATE TABLE IF NOT EXISTS automation_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prospect_id INT NOT NULL,
+    \`key\` VARCHAR(191) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_automation_log (prospect_id, \`key\`),
+    CONSTRAINT fk_automation_prospect FOREIGN KEY (prospect_id) REFERENCES prospects(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ];
 
 export const db = {
@@ -321,7 +330,7 @@ async function backfillMissingTokens() {
 
 const DEFAULT_SETTINGS = {
   stages: JSON.stringify([
-    { key: "nouveau", label: "Nouveau", color: "sky" },
+    { key: "prospection", label: "Prospection", color: "sky" },
     { key: "qualification", label: "Qualification", color: "amber" },
     { key: "suivi", label: "Suivi", color: "violet" },
     { key: "conversion", label: "Conversion", color: "emerald" },
@@ -352,6 +361,9 @@ const DEFAULT_SETTINGS = {
     "Prix trop élevé",
     "Sans suite",
   ]),
+  automations_enabled: "1",
+  automation_relance_days: JSON.stringify([3, 7, 14]),
+  automation_inactive_days: "21",
 };
 
 async function seedSettings() {
@@ -365,65 +377,56 @@ async function seedSettings() {
 
 const DEFAULT_TEMPLATE_STEPS = [
   {
-    key: "identifie",
-    name: "Établissements Identifiés",
+    key: "etablissements_identifies",
+    name: "Étape 1 : Établissements Identifiés",
     color: "sky",
     fields: [
       { key: "date", label: "Date", type: "date", required: true },
       { key: "numero", label: "N°", type: "text" },
-      { key: "entreprises", label: "Noms des entreprises", type: "text" },
+      { key: "noms_ecoles", label: "Noms des écoles", type: "text" },
       { key: "contacts", label: "Contacts", type: "text", placeholder: "Ex: 06 12 34 56 78" },
       { key: "quartier", label: "Quartier", type: "text" },
     ],
   },
   {
     key: "prospection",
-    name: "Prospection (évaluation terrain)",
+    name: "Étape 2 : Prospection (Évaluation initiale sur le terrain)",
     color: "amber",
     fields: [
       { key: "date", label: "Date", type: "date", required: true },
       { key: "numero", label: "N°", type: "text" },
-      { key: "decideurs", label: "Décideurs rencontrés", type: "text" },
+      { key: "noms_ecoles", label: "Noms des écoles", type: "text" },
+      { key: "decideurs_rencontres", label: "Décideurs rencontrés", type: "text" },
       { key: "reactions", label: "Réactions / Objections", type: "textarea" },
-      { key: "opportunites", label: "Opportunités", type: "textarea" },
-      {
-        key: "prochaines_actions",
-        label: "Prochaines actions",
-        type: "textarea",
-      },
-      {
-        key: "difficultes",
-        label: "Difficultés rencontrées",
-        type: "textarea",
-      },
+      { key: "opportunites", label: "Opportunités (Intéressés)", type: "textarea" },
+      { key: "prochaines_actions", label: "Prochaines actions", type: "textarea" },
+      { key: "difficultes", label: "Difficultés rencontrées", type: "textarea" },
     ],
   },
   {
     key: "suivi",
-    name: "Établissements Suivis (relances / dossiers)",
+    name: "Étape 3 : Établissements Suivis (Relances et traitement des dossiers)",
     color: "violet",
     fields: [
       { key: "date", label: "Date", type: "date", required: true },
       { key: "effectif", label: "Effectif", type: "number" },
+      { key: "noms_ecoles", label: "Noms des écoles", type: "text" },
       { key: "decideur", label: "Décideur", type: "text" },
-      { key: "reactions", label: "Réactions / Objections", type: "textarea" },
+      { key: "reactions", label: "Reactions / Objections", type: "textarea" },
       { key: "opportunites", label: "Opportunités", type: "textarea" },
       { key: "actions", label: "Actions", type: "textarea" },
-      {
-        key: "prochaines_actions",
-        label: "Prochaines actions",
-        type: "textarea",
-      },
+      { key: "prochaines_actions", label: "Prochaines Actions", type: "textarea" },
       { key: "difficultes", label: "Difficultés", type: "textarea" },
     ],
   },
   {
     key: "contrat_depose",
-    name: "Contrats Déposés",
+    name: "Étape 4 : Contrats Déposés",
     color: "indigo",
     fields: [
       { key: "date", label: "Date", type: "date", required: true },
       { key: "numero", label: "N°", type: "text" },
+      { key: "noms_ecoles", label: "Noms des écoles", type: "text" },
       { key: "representants", label: "Représentants rencontrés", type: "text" },
       { key: "quartier", label: "Quartier", type: "text" },
       { key: "commentaires", label: "Commentaires", type: "textarea" },
@@ -431,14 +434,15 @@ const DEFAULT_TEMPLATE_STEPS = [
   },
   {
     key: "contrat_signe",
-    name: "Contrats Signés",
+    name: "Étape 5 : Contrats Signés",
     color: "emerald",
     fields: [
       { key: "date", label: "Date", type: "date", required: true },
       { key: "ordre", label: "Ordre", type: "text" },
+      { key: "noms_ecoles", label: "Noms des écoles", type: "text" },
       { key: "representants", label: "Représentants rencontrés", type: "text" },
       { key: "quartier", label: "Quartier", type: "text" },
-      { key: "note", label: "Note", type: "textarea" },
+      { key: "commentaires", label: "Commentaires", type: "textarea" },
     ],
   },
 ];
@@ -486,7 +490,7 @@ async function ensureDefaultTemplate() {
   const info = await db.run(
     "INSERT INTO pipeline_templates (name, description, is_default) VALUES (?,?,?)",
     "Pipeline par défaut",
-    "5 étapes : identification → prospection → suivi → contrats déposés → contrats signés",
+    "5 étapes : Établissements Identifiés → Prospection → Établissements Suivis → Contrats Déposés → Contrats Signés",
     1,
   );
   for (let i = 0; i < DEFAULT_TEMPLATE_STEPS.length; i++) {
@@ -504,19 +508,62 @@ async function ensureDefaultTemplate() {
   await syncStagesFromTemplate();
 }
 
+async function migratePipelineStages() {
+  const tmpl = await db.get(
+    "SELECT id FROM pipeline_templates WHERE is_default = 1",
+  );
+  if (tmpl) {
+    const existing = await db.get(
+      "SELECT COUNT(*) AS n FROM pipeline_template_steps WHERE template_id = ? AND `key` = 'etablissements_identifies'",
+      tmpl.id,
+    );
+    if (!existing?.n) {
+      await db.run(
+        "DELETE FROM pipeline_template_steps WHERE template_id = ? AND `key` IN ('identifie', 'suspect', 'lead', 'qualification')",
+        tmpl.id,
+      );
+      await db.run(
+        "INSERT INTO pipeline_template_steps (template_id, position, `key`, name, color, form_fields) VALUES (?, 0, 'etablissements_identifies', 'Étape 1 : Établissements Identifiés', 'sky', '[]')",
+        tmpl.id,
+      );
+      await db.run(
+        "INSERT INTO pipeline_template_steps (template_id, position, `key`, name, color, form_fields) VALUES (?, 1, 'prospection', 'Étape 2 : Prospection (Évaluation initiale sur le terrain)', 'amber', '[]')",
+        tmpl.id,
+      );
+      await db.run(
+        "INSERT INTO pipeline_template_steps (template_id, position, `key`, name, color, form_fields) VALUES (?, 2, 'suivi', 'Étape 3 : Établissements Suivis (Relances et traitement des dossiers)', 'violet', '[]')",
+        tmpl.id,
+      );
+      await db.run(
+        "INSERT INTO pipeline_template_steps (template_id, position, `key`, name, color, form_fields) VALUES (?, 3, 'contrat_depose', 'Étape 4 : Contrats Déposés', 'indigo', '[]')",
+        tmpl.id,
+      );
+      await db.run(
+        "INSERT INTO pipeline_template_steps (template_id, position, `key`, name, color, form_fields) VALUES (?, 4, 'contrat_signe', 'Étape 5 : Contrats Signés', 'emerald', '[]')",
+        tmpl.id,
+      );
+    }
+  }
+  await db.run(
+    "UPDATE prospects SET stage = 'etablissements_identifies', updated_at = NOW() WHERE stage IN ('nouveau', 'identifie', 'suspect', 'lead', 'qualification', 'prospection')",
+  );
+  await syncStagesFromTemplate();
+}
+
 export async function initDb() {
   await ensureDatabase();
   await createPool();
   await createSchema();
   await migrateSchema();
   await seedSettings();
+  await migratePipelineStages();
   await ensureDefaultTemplate();
   await backfillMissingTokens();
   console.log(`[OptiProspect] MySQL connecté : ${DB_HOST}:${DB_PORT}/${DB_NAME}`);
 }
 
 export const STAGES = [
-  "nouveau",
+  "prospection",
   "qualification",
   "suivi",
   "conversion",

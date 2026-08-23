@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Camera, X } from 'lucide-react';
+import { Check, Camera } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api.js';
 
@@ -17,7 +17,7 @@ export default function ProfilPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Load the current profile once on mount
+  // Chargement du profil au montage
   useEffect(() => {
     api.profile()
       .then((u) => {
@@ -41,11 +41,6 @@ export default function ProfilPage() {
     const reader = new FileReader();
     reader.onload = () => setAvatarPreview(reader.result);
     reader.readAsDataURL(file);
-  };
-
-  const removeAvatar = () => {
-    setAvatarPreview(null);
-    setAvatarFile(null);
   };
 
   const save = async (e) => {
@@ -131,15 +126,6 @@ export default function ProfilPage() {
                 <Camera size={16} /> Choisir une photo
                 <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </label>
-              {avatarPreview && (
-                <button
-                  type="button"
-                  onClick={removeAvatar}
-                  className="flex items-center gap-1 rounded-xl bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-100 dark:bg-rose-500/10"
-                >
-                  <X size={14} /> Retirer
-                </button>
-              )}
             </div>
           </div>
 

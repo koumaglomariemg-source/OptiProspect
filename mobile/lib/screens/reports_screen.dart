@@ -180,7 +180,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               [formatIsoDate(r.periodStart), formatIsoDate(r.periodEnd)]
                   .where((s) => s != '—')
                   .join(' → '),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Row(
@@ -200,7 +200,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             if (r.reviewedByName != null) ...[
               const SizedBox(height: 4),
               Text('Décision prise par : ${r.reviewedByName}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
             if (needsReview) ...[
               const SizedBox(height: 8),
@@ -236,13 +236,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Expanded(
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey),
+          Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(width: 4),
           Flexible(
             child: Text(text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12)),
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
         ],
       ),

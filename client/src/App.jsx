@@ -14,8 +14,10 @@ import DevisPage from "./pages/DevisPage.jsx";
 import ClientsPage from "./pages/ClientsPage.jsx";
 import ProspectionPage from "./pages/ProspectionPage.jsx";
 import RecherchePage from "./pages/RecherchePage.jsx";
+import CartePage from "./pages/CartePage.jsx";
 import PipelineTemplatesPage from "./pages/PipelineTemplatesPage.jsx";
 import ReunionsPage from "./pages/ReunionsPage.jsx";
+import MaJourneePage from "./pages/MaJourneePage.jsx";
 import ProfilPage from "./pages/ProfilPage.jsx";
 
 function Spinner() {
@@ -91,6 +93,16 @@ export default function App() {
           }
         />
         <Route
+          path="/carte"
+          element={
+            user.role === "admin" ? (
+              <AccessDenied role={user.role} />
+            ) : (
+              <CartePage />
+            )
+          }
+        />
+        <Route
           path="/devis"
           element={
             user.role === "admin" ? (
@@ -147,6 +159,16 @@ export default function App() {
               <AccessDenied role={user.role} />
             ) : (
               <ReunionsPage />
+            )
+          }
+        />
+        <Route
+          path="/journee"
+          element={
+            user.role === "admin" ? (
+              <AccessDenied role={user.role} />
+            ) : (
+              <MaJourneePage />
             )
           }
         />

@@ -1,15 +1,19 @@
 import { Router } from "express";
+import multer from "multer";
 import { db, getDefaultTemplate, getTemplateSteps } from "../db.js";
 import { ah } from "../middleware/asyncHandler.js";
 import { auth } from "../middleware/auth.js";
 import { scheduleReminder, notifyConversion } from "../services/reminders.js";
 import { sendMail, isMailConfigured } from "../services/mail.js";
 import { logAudit } from "../services/audit.js";
+import { parse } from "csv-parse/sync";
 import {
   canAccessProspects,
   prospectScope,
   teamIds,
 } from "../services/scope.js";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 router.use(auth());
@@ -93,7 +97,7 @@ async function getStageKeys() {
     const arr = JSON.parse(row?.value || "[]");
     if (Array.isArray(arr) && arr.length) return arr.map((s) => s.key);
   } catch {}
-  return ["nouveau", "qualification", "suivi", "conversion", "perdu"];
+  return ["etablissements_identifies", "prospection", "suivi", "contrat_depose", "contrat_signe"];
 }
 
 const EVENT_FIELD_TYPE = {
@@ -128,11 +132,11 @@ const SOURCE_BASE = {
   reseau: 7,
 };
 const STAGE_BASE = {
-  nouveau: 10,
-  qualification: 30,
-  suivi: 50,
-  conversion: 70,
-  perdu: 0,
+  etablissements_identifies: 10,
+  prospection: 25,
+  suivi: 45,
+  contrat_depose: 70,
+  contrat_signe: 100,
 };
 const TYPE_WEIGHT = {
   email: 3,
@@ -325,7 +329,7 @@ router.post("/", ah(async (req, res) => {
     const stageKeys = await getStageKeys();
     const stage = stageKeys.includes(b.stage)
       ? b.stage
-      : stageKeys[0] || "nouveau";
+: stageKeys[0] || "etablissements_identifies";
     const temperature = TEMPERATURES.includes(b.temperature)
       ? b.temperature
       : "tiede";
@@ -435,6 +439,125 @@ router.post("/", ah(async (req, res) => {
     await scheduleReminder(prospect, req.user.id);
     logAudit(req, "prospect.create", `${prospect.name}`);
     res.status(201).json(await decorate(prospect));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+}));
+
+router.post("/import", upload.single("file"), ah(async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: "Fichier CSV requis" });
+    const content = file.buffer.toString("utf-8");
+    const records = parse(content, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+    if (!records.length) return res.status(400).json({ error: "CSV vide" });
+
+    const stageKeys = await getStageKeys();
+    const template = await getDefaultTemplate();
+    const results = { created: 0, errors: [] };
+
+    for (let i = 0; i < records.length; i++) {
+      const row = records[i];
+      const rowNum = i + 2;
+      try {
+        const name = (row.name || row.nom || "").trim();
+        const firstName = (row.first_name || row.prenom || "").trim();
+        const lastName = (row.last_name || row.nom || "").trim();
+        const fullName = name || [firstName, lastName].filter(Boolean).join(" ") || `Prospect ${rowNum}`;
+        if (!fullName) {
+          results.errors.push({ row: rowNum, error: "Nom requis" });
+          continue;
+        }
+        const product = (row.product || row.produit || "").trim();
+        if (!product) {
+          results.errors.push({ row: rowNum, error: "Produit requis" });
+          continue;
+        }
+        const stage = stageKeys.includes(row.stage) ? row.stage : stageKeys[0] || "etablissements_identifies";
+        const temperature = TEMPERATURES.includes(row.temperature) ? row.temperature : "tiede";
+
+        let assignTarget = req.user.role === "commercial"
+          ? req.user.id
+          : row.assigned_to ? Number(row.assigned_to) : null;
+        if (req.user.role === "commercial" && assignTarget !== req.user.id) {
+          assignTarget = req.user.id;
+        }
+        if (req.user.role === "manager" && assignTarget && !(await teamIds(req.user)).includes(assignTarget)) {
+          assignTarget = null;
+        }
+
+        let numero = row.numero ? String(row.numero).trim() : "";
+        if (!numero) {
+          const nums = await db.all(
+            "SELECT numero FROM prospects WHERE numero IS NOT NULL AND numero != ''",
+          );
+          let max = 0;
+          for (const r of nums) {
+            const m = String(r.numero).match(/(\d+)\s*$/);
+            if (m) max = Math.max(max, parseInt(m[1], 10));
+          }
+          numero = `N-${String(max + 1).padStart(3, "0")}`;
+        }
+
+        const info = await db.run(
+          `INSERT INTO prospects (name, first_name, last_name, company, email, phone, linkedin, source, value, stage, temperature, secteur, adresse, latitude, longitude, assigned_to, next_action, next_action_date, note, template_id, numero, quartier, effectif, product, contrat_depose, contrat_signe, option_frais_scolaire, contact_token)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,REPLACE(UUID(), '-', ''))`,
+          fullName,
+          firstName || null,
+          lastName || null,
+          row.company || null,
+          row.email || null,
+          row.phone || null,
+          row.linkedin || null,
+          row.source || "import",
+          Number(row.value) || 0,
+          stage,
+          temperature,
+          row.secteur || null,
+          row.adresse || null,
+          row.latitude ? Number(row.latitude) : null,
+          row.longitude ? Number(row.longitude) : null,
+          assignTarget,
+          row.next_action || null,
+          row.next_action_date || null,
+          row.note || null,
+          template?.id || null,
+          numero,
+          row.quartier || null,
+          row.effectif ? Number(row.effectif) : null,
+          product,
+          row.contrat_depose ? 1 : 0,
+          row.contrat_signe ? 1 : 0,
+          row.option_frais_scolaire ? 1 : 0,
+        );
+
+        if (template) {
+          const steps = await getTemplateSteps(template.id);
+          for (const s of steps)
+            await db.run(
+              "INSERT IGNORE INTO prospect_steps (prospect_id, step_id, status) VALUES (?,?,?)",
+              info.insertId,
+              s.id,
+              "pending",
+            );
+        }
+
+        const prospect = await db.get("SELECT * FROM prospects WHERE id = ?", info.insertId);
+        const score = await computeScore(prospect);
+        await db.run("UPDATE prospects SET score = ? WHERE id = ?", score, prospect.id);
+        await logEvent(prospect.id, req.user, "creation");
+        await scheduleReminder(prospect, req.user.id);
+        logAudit(req, "prospect.create", `${prospect.name} (import)`);
+        results.created++;
+      } catch (e) {
+        results.errors.push({ row: rowNum, error: e.message });
+      }
+    }
+    res.json(results);
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -737,11 +860,11 @@ router.get("/:id/suggest-message", ah(async (req, res) => {
     .join(" et ");
 
   let intro;
-  if (isInbound && p.stage === "nouveau") {
+  if (isInbound && p.stage === "prospection") {
     intro = `Bonjour ${firstName},\n\nMerci de nous avoir contactés${srcLabel ? ` ${srcLabel}` : ""} ! Votre demande a bien été reçue par notre équipe${contexte ? ` (${contexte})` : ""}.`;
   } else if (isInbound) {
     intro = `Bonjour ${firstName},\n\nMerci de nous avoir contactés${srcLabel ? ` ${srcLabel}` : ""}. Nous avons bien reçu votre demande${contexte ? ` concernant ${contexte}` : ""} et souhaitons échanger avec vous au sujet de ${company}.`;
-  } else if (p.stage === "nouveau") {
+  } else if (p.stage === "prospection" || p.stage === "qualification") {
     intro = `Bonjour ${firstName},\n\n${capitalize(srcLabel || "je souhaiterais vous présenter nos solutions")}${contexte ? `, particulièrement adaptées à ${contexte}` : ""}.`;
   } else {
     intro =
@@ -843,23 +966,23 @@ async function suggestNextAction(p) {
     p.id,
   );
   if (!last) {
-    if (p.stage === "nouveau") return "Envoyer un premier message de contact";
+    if (p.stage === "etablissements_identifies") return "Créer la fiche établissement avec contacts";
     return `Reprendre le contact avec ${p.name}`;
   }
   const diffDays = (Date.now() - toTimestamp(last.created_at)) / 864e5;
   if (diffDays > 5)
     return "Relancer par téléphone (inactif depuis plus de 5 jours)";
   switch (p.stage) {
-    case "nouveau":
-      return "Envoyer un premier message de contact";
-    case "qualification":
-      return "Proposer un rendez-vous de démonstration";
+    case "etablissements_identifies":
+      return "Planifier la première visite terrain";
+    case "prospection":
+      return "Qualifier le besoin et noter les réactions";
     case "suivi":
-      return "Envoyer une proposition commerciale";
-    case "conversion":
-      return "Préparer le contrat et la mise en place";
-    case "perdu":
-      return "Placer en séquence de re-ciblage";
+      return "Effectuer la relance et mettre à jour le dossier";
+    case "contrat_depose":
+      return "Suivre le dépôt du contrat et relancer";
+    case "contrat_signe":
+      return "Finaliser et archiver le dossier";
     default:
       return "Prendre un nouveau contact";
   }

@@ -94,12 +94,18 @@ export const api = {
   deleteMeeting: (id) => request(`/meetings/${id}`, { method: 'DELETE' }),
   suggestMessage: (id) => request(`/prospects/${id}/suggest-message`),
   sendMessage: (id, data) => request(`/prospects/${id}/send-message`, { method: 'POST', body: JSON.stringify(data) }),
+  importProspects: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request('/prospects/import', { method: 'POST', body: formData, headers: {} });
+  },
   interactions: (prospectId) => request(`/prospects/${prospectId}/interactions`),
   addInteraction: (prospectId, data) => request(`/prospects/${prospectId}/interactions`, { method: 'POST', body: JSON.stringify(data) }),
   deleteInteraction: (id) => request(`/interactions/${id}`, { method: 'DELETE' }),
   events: (prospectId) => request(`/prospects/${prospectId}/events`),
 
   reminders: () => request('/reminders'),
+  day: () => request('/day'),
 
   notifications: () => request('/notifications'),
   unreadCount: () => request('/notifications/unread-count'),
@@ -112,6 +118,10 @@ export const api = {
   statsTimeline: (days = 30, params = {}) => request(`/stats/timeline?days=${days}&` + new URLSearchParams(params)),
   statsForecast: (params = {}) => request('/stats/forecast?' + new URLSearchParams(params)),
   statsTargets: (yearMonth, params = {}) => request(`/stats/targets?year_month=${yearMonth}&` + new URLSearchParams(params)),
+  statsCounts: () => request('/stats/counts'),
+  statsProspection: (days = 30, params = {}) => request(`/stats/prospection?days=${days}&` + new URLSearchParams(params)),
+  statsAtRisk: (params = {}) => request('/stats/at-risk?' + new URLSearchParams(params)),
+  statsAging: (params = {}) => request('/stats/aging?' + new URLSearchParams(params)),
   clients: (params = {}) => request('/stats/clients?' + new URLSearchParams(params)),
 
   setTarget: (userId, yearMonth, targetValue) => request(`/users/${userId}/target`, { method: 'PUT', body: JSON.stringify({ year_month: yearMonth, target_value: targetValue }) }),

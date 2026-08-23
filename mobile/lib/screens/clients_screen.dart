@@ -74,7 +74,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                 Row(
                   children: [
                     Text('${filtered.length} client(s)',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     const Spacer(),
                     if (_totalValide > 0)
                       Badge(label: '${money(_totalValide)} de devis validés', color: Colors.green),
@@ -137,7 +137,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           [c.company ?? '', 'client depuis le ${formatIsoDate(c.convertedAt)}']
                               .where((s) => s.isNotEmpty && s != '—')
                               .join(' • '),
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -174,14 +174,14 @@ class _ClientsScreenState extends State<ClientsScreen> {
     return Expanded(
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey),
+          Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
               '$value $label',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
         ],
