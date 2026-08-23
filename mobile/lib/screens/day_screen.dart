@@ -9,6 +9,7 @@ import '../utils/formatters.dart';
 import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import 'prospect_detail_screen.dart';
+import '../widgets/skeleton.dart';
 
 class DayScreen extends StatefulWidget {
   const DayScreen({super.key});
@@ -77,7 +78,7 @@ class _DayScreenState extends State<DayScreen> {
     }
     final data = _data;
     if (data == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: SkeletonScreen());
     }
     final kpis = <(String, String, IconData, Color)>[
       ('Relances du jour', '${data.countRelancesToday}', Icons.alarm, Colors.orange),

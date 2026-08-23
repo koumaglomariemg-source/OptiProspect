@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 
 class ClientsScreen extends StatefulWidget {
   const ClientsScreen({super.key});
@@ -88,7 +89,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _clients == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : filtered.isEmpty
                   ? const EmptyState(message: 'Aucun client')
                   : RefreshIndicator(

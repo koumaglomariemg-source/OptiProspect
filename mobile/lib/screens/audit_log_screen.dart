@@ -7,6 +7,7 @@ import '../models/settings.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 
 class AuditLogScreen extends StatefulWidget {
   const AuditLogScreen({super.key});
@@ -46,7 +47,7 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _entries == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _entries!.isEmpty

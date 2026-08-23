@@ -10,6 +10,7 @@ import '../utils/constants.dart';
 import '../utils/formatters.dart';
 import '../widgets/charts.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'prospect_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -105,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _overview == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen()
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(

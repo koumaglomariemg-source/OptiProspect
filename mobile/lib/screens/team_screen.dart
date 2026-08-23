@@ -10,6 +10,7 @@ import '../services/api_client.dart';
 import '../utils/constants.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 
 class TeamScreen extends StatefulWidget {
   const TeamScreen({super.key});
@@ -223,7 +224,7 @@ class _TeamScreenState extends State<TeamScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _users == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(

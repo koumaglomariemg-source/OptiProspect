@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'meeting_form_screen.dart';
 
 class MeetingsScreen extends StatefulWidget {
@@ -91,7 +92,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _meetings == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : _meetings!.isEmpty
                   ? const EmptyState(message: 'Aucune réunion')
                   : RefreshIndicator(

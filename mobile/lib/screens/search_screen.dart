@@ -8,6 +8,7 @@ import '../services/api_client.dart';
 import '../utils/constants.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'prospect_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -175,7 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: _error != null
                 ? ErrorRetry(message: _error!, onRetry: _load)
                 : _prospects == null
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const SkeletonScreen(showStats: false)
                     : _prospects!.isEmpty
                         ? const EmptyState(message: 'Aucun prospect trouvé')
                         : RefreshIndicator(

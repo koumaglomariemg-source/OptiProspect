@@ -10,6 +10,7 @@ import '../services/api_client.dart';
 import '../utils/constants.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'prospect_detail_screen.dart';
 import 'prospect_form_screen.dart';
 
@@ -91,7 +92,7 @@ class _KanbanScreenState extends State<KanbanScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _prospects == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : RefreshIndicator(
                   onRefresh: _load,
                   child: Column(

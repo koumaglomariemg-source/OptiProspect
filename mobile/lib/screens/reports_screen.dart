@@ -7,6 +7,7 @@ import '../services/api_client.dart';
 import '../utils/constants.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'report_form_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -106,7 +107,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _reports == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : _reports!.isEmpty
                   ? const EmptyState(message: 'Aucun rapport')
                   : RefreshIndicator(

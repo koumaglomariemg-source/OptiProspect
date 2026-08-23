@@ -51,39 +51,39 @@ class _MainShellState extends State<MainShell> {
     if (u == null) return [];
     if (u.isAdmin) {
       return const [
-        Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
-        Destination(TeamScreen(), Icons.people_outline, Icons.people, 'Équipe'),
-        Destination(ReferentielsScreen(), Icons.storage_outlined, Icons.storage, 'Référentiels'),
-        Destination(PipelineTemplatesScreen(), Icons.linear_scale_outlined, Icons.linear_scale, 'Modèles'),
-        Destination(AuditLogScreen(), Icons.history_outlined, Icons.history, 'Audit'),
-        Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil'),
+        Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard', section: 'Pilotage'),
+        Destination(TeamScreen(), Icons.people_outline, Icons.people, 'Équipe', section: 'Pilotage'),
+        Destination(ReferentielsScreen(), Icons.storage_outlined, Icons.storage, 'Référentiels', section: 'Configuration'),
+        Destination(PipelineTemplatesScreen(), Icons.linear_scale_outlined, Icons.linear_scale, 'Modèles', section: 'Configuration'),
+        Destination(AuditLogScreen(), Icons.history_outlined, Icons.history, 'Audit', section: 'Configuration'),
+        Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil', section: 'Compte'),
       ];
     }
     if (u.isManager) {
       return [
         const Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
         const Destination(DayScreen(), Icons.today_outlined, Icons.today, 'Ma journée'),
-        const Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche'),
         const Destination(MapScreen(embedded: true), Icons.map_outlined, Icons.map, 'Carte'),
         const Destination(DevisScreen(), Icons.request_quote_outlined, Icons.request_quote, 'Devis'),
-        const Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients'),
-        const Destination(PortefeuillesScreen(), Icons.people_alt_outlined, Icons.people_alt, 'Portefeuilles'),
-        const Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports'),
-        const Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions'),
-        const Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil'),
+        const Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche', section: 'Clientèle'),
+        const Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients', section: 'Clientèle'),
+        const Destination(PortefeuillesScreen(), Icons.people_alt_outlined, Icons.people_alt, 'Portefeuilles', section: 'Clientèle'),
+        const Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports', section: 'Pilotage'),
+        const Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions', section: 'Animation'),
+        const Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil', section: 'Compte'),
       ];
     }
     return const [
       Destination(KanbanScreen(), Icons.table_chart_outlined, Icons.table_chart, 'Tableau'),
-      Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
       Destination(DayScreen(), Icons.today_outlined, Icons.today, 'Ma journée'),
-      Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche'),
       Destination(MapScreen(), Icons.map_outlined, Icons.map, 'Carte'),
       Destination(DevisScreen(), Icons.request_quote_outlined, Icons.request_quote, 'Devis'),
-      Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients'),
-      Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports'),
-      Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions'),
-      Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil'),
+      Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard', section: 'Pilotage'),
+      Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports', section: 'Pilotage'),
+      Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche', section: 'Clientèle'),
+      Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients', section: 'Clientèle'),
+      Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions', section: 'Clientèle'),
+      Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil', section: 'Compte'),
     ];
   }
 
@@ -120,8 +120,15 @@ class _MainShellState extends State<MainShell> {
           fontSize: 19,
           fontWeight: FontWeight.w700,
         ),
-        flexibleSpace: Container(
-          color: kPrimary,
+        flexibleSpace: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [kPrimaryDark, kPrimary, kAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              stops: const [0.0, 0.55, 1.0],
+            ),
+          ),
         ),
         title: Row(
           children: [
@@ -287,16 +294,41 @@ class _MainShellState extends State<MainShell> {
               ),
             ),
             Divider(color: scheme.outlineVariant),
-            for (final t in more)
-              ListTile(
-                leading: Icon(t.icon, color: kPrimary),
-                title: Text(t.label, style: TextStyle(color: scheme.onSurface)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => t.screen));
-                },
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < more.length; i++) ...[
+                      if (more[i].section != null &&
+                          (i == 0 || more[i].section != more[i - 1].section))
+                        Padding(
+                          padding: EdgeInsets.only(left: 16, top: i == 0 ? 4 : 12, bottom: 2),
+                          child: Text(
+                            more[i].section!.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                      ListTile(
+                        leading: Icon(more[i].icon, color: kPrimary),
+                        title: Text(more[i].label, style: TextStyle(color: scheme.onSurface)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => more[i].screen));
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
-            const SizedBox(height: 8),
+            ),
           ],
         ),
       ),
@@ -309,6 +341,7 @@ class Destination {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
+  final String? section;
 
-  const Destination(this.screen, this.icon, this.selectedIcon, this.label);
+  const Destination(this.screen, this.icon, this.selectedIcon, this.label, {this.section});
 }

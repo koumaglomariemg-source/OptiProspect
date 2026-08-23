@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -69,7 +70,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : notifications == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : notifications.isEmpty
                   ? const EmptyState(message: 'Aucune notification')
                   : RefreshIndicator(

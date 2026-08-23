@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'prospect_detail_screen.dart';
 
 class PortefeuillesScreen extends StatefulWidget {
@@ -110,7 +111,7 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _prospects == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const SkeletonScreen(showStats: false)
               : filtered.isEmpty
                   ? const EmptyState(message: 'Aucun prospect')
                   : RefreshIndicator(
