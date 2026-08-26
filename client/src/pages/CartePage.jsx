@@ -175,23 +175,6 @@ export default function CartePage() {
 
   const drawerProspect = prospects.find((p) => String(p.id) === String(drawerId));
 
-  // En PWA standalone le drawer portaled doit passer au-dessus du stacking context Leaflet (z 700)
-  // On désactive l'interaction carte quand le drawer est ouvert pour éviter qu'elle capte les touches
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (drawerProspect) {
-      map.dragging?.disable();
-      map.scrollWheelZoom?.disable();
-      map.doubleClickZoom?.disable();
-    } else {
-      map.dragging?.enable();
-      map.scrollWheelZoom?.enable();
-      map.doubleClickZoom?.enable();
-      setTimeout(() => map.invalidateSize(), 100);
-    }
-  }, [drawerProspect]);
-
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 p-6 pb-3">
