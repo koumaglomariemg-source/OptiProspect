@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   ArrowRight,
   Building2,
@@ -392,10 +391,10 @@ export default function ProspectDrawer({
     </div>
   );
 
-  const drawerContent = (
+  return (
     <div className="fixed inset-0 z-[9999]">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
       <div className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-white shadow-2xl dark:bg-slate-900 lg:rounded-l-2xl">
@@ -1317,6 +1316,4 @@ export default function ProspectDrawer({
       )}
     </div>
   );
-  if (typeof document !== "undefined" && document.body) return createPortal(drawerContent, document.body);
-  return drawerContent;
 }
