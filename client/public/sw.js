@@ -1,4 +1,4 @@
-const CACHE = 'optiprospect-v5';
+const CACHE = 'optiprospect-v6';
 const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

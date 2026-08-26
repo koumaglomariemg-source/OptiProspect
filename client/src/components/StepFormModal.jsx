@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   CheckCircle2,
@@ -114,10 +114,23 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
   const [saved, setSaved] = useState("");
   const [interactions, setInteractions] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const autoShownRef = useRef(false);
+  const dismissedRef = useRef(false);
 
   const load = async () => {
     try {
       const rows = await api.steps(prospect.id);
+      // si toutes les étapes déjà validées -> afficher direct la page succès (sauf si l'utilisateur a demandé à revisiter)
+      const allValidated = rows.length > 0 && rows.every((s) => s.status === "validated");
+      if (allValidated && !autoShownRef.current && !dismissedRef.current) {
+        setShowSuccess(true);
+      }
+      if (!allValidated) {
+        // réinitialiser le flag si on n'est plus en état terminé
+        autoShownRef.current = false;
+      } else if (!autoShownRef.current) {
+        autoShownRef.current = true;
+      }
       setSteps((prevSteps) => {
         const firstPending = rows.findIndex((s) => s.status !== "validated");
         let newActiveIdx = firstPending === -1 ? rows.length - 1 : firstPending;
@@ -146,6 +159,10 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
   };
 
   useEffect(() => {
+    autoShownRef.current = false;
+    dismissedRef.current = false;
+    setShowSuccess(false);
+    setLoading(true);
     load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [prospect.id]);
 
@@ -302,13 +319,17 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <button
-              onClick={() => setShowSuccess(false)}
+              onClick={() => {
+                dismissedRef.current = true;
+                setShowSuccess(false);
+              }}
               className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
             >
               Revisiter les étapes
             </button>
             <button
               onClick={() => {
+                dismissedRef.current = true;
                 setShowSuccess(false);
                 // rester sur la dernière étape pour permettre la modification
                 setTimeout(() => setActiveIdx(steps.length - 1), 0);
