@@ -311,7 +311,7 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
 
   if (showSuccess) {
     return (
-      <Modal title={`Pipeline — ${prospect.name}`} onClose={() => setShowSuccess(false)} fullScreenMobile>
+      <Modal title={`Pipeline — ${prospect.name}`} onClose={onClose} fullScreenMobile>
         <div className="py-10 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15">
             <CheckCircle2 size={36} className="text-emerald-600 dark:text-emerald-400" />
