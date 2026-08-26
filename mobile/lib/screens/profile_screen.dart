@@ -56,12 +56,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: current,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Mot de passe actuel'),
+              decoration: const InputDecoration(
+                labelText: 'Mot de passe actuel',
+              ),
             ),
             TextField(
               controller: next,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Nouveau mot de passe'),
+              decoration: const InputDecoration(
+                labelText: 'Nouveau mot de passe',
+              ),
             ),
             TextField(
               controller: confirm,
@@ -71,7 +75,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             onPressed: () async {
               if (next.text.length < 6) return;
@@ -92,8 +99,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (submitted == true && mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Mot de passe mis à jour')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Mot de passe mis à jour')));
     }
   }
 
@@ -101,36 +109,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.read<AuthProvider>();
     final user = auth.user;
     if (user == null) return;
-    final controller = TextEditingController(text: user.name);
+    final firstC = TextEditingController(text: user.first_name ?? '');
+    final lastC = TextEditingController(text: user.last_name ?? '');
+    final emailC = TextEditingController(text: user.email);
     final messenger = ScaffoldMessenger.of(context);
-    final newName = await showDialog<String>(
+    final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Modifier le nom'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Nom'),
+        title: const Text('Modifier mon profil'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: firstC,
+                decoration: const InputDecoration(
+                  labelText: 'Prénom',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: lastC,
+                decoration: const InputDecoration(
+                  labelText: 'Nom',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: emailC,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
-            onPressed: () {
-              final v = controller.text.trim();
-              if (v.isNotEmpty) Navigator.pop(ctx, v);
-            },
+            onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Enregistrer'),
           ),
         ],
       ),
     );
-    if (newName != null) {
-      try {
-        await _api.updateProfile({'name': newName});
-        await auth.refreshUser();
-        messenger.showSnackBar(const SnackBar(content: Text('Nom mis à jour')));
-      } catch (e) {
-        messenger.showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+    if (saved != true) return;
+    final first = firstC.text.trim();
+    final last = lastC.text.trim();
+    final email = emailC.text.trim();
+    final fullName = [first, last].where((s) => s.isNotEmpty).join(' ').trim();
+    try {
+      await _api.updateProfile({
+        'first_name': first,
+        'last_name': last,
+        if (fullName.isNotEmpty) 'name': fullName,
+        if (email.isNotEmpty) 'email': email,
+      });
+      await auth.refreshUser();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Profil mis à jour')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -166,7 +213,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -193,11 +242,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Avatar(name: user.name, image: user.avatar, radius: 36),
                         const SizedBox(height: 10),
-                        Text(user.name,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Badge(label: kRoleLabels[user.role] ?? user.role, color: kPrimary),
+                        Text(
+                          user.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Badge(
+                          label: kRoleLabels[user.role] ?? user.role,
+                          color: kPrimary,
+                        ),
                         const SizedBox(height: 6),
-                        Text(user.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                        Text(
+                          user.email,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -208,11 +272,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: KpiCard(icon: Icons.people_outline, value: '${stats.total}', label: 'Prospects', color: kPrimary),
+                              child: KpiCard(
+                                icon: Icons.people_outline,
+                                value: '${stats.total}',
+                                label: 'Prospects',
+                                color: kPrimary,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: KpiCard(icon: Icons.groups_outlined, value: '${stats.converted}', label: 'Convertis', color: Colors.green),
+                              child: KpiCard(
+                                icon: Icons.groups_outlined,
+                                value: '${stats.converted}',
+                                label: 'Convertis',
+                                color: Colors.green,
+                              ),
                             ),
                           ],
                         ),
@@ -220,11 +294,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: KpiCard(icon: Icons.pause_circle_outline, value: '${stats.active}', label: 'Actifs', color: Colors.orange),
+                              child: KpiCard(
+                                icon: Icons.pause_circle_outline,
+                                value: '${stats.active}',
+                                label: 'Actifs',
+                                color: Colors.orange,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: KpiCard(icon: Icons.cancel_outlined, value: '${stats.lost}', label: 'Perdus', color: Colors.red),
+                              child: KpiCard(
+                                icon: Icons.cancel_outlined,
+                                value: '${stats.lost}',
+                                label: 'Perdus',
+                                color: Colors.red,
+                              ),
                             ),
                           ],
                         ),
@@ -237,32 +321,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.image_outlined, color: kPrimary),
+                          leading: const Icon(
+                            Icons.image_outlined,
+                            color: kPrimary,
+                          ),
                           title: const Text('Changer la photo'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: _pickAvatar,
                         ),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.edit_outlined, color: kPrimary),
+                          leading: const Icon(
+                            Icons.edit_outlined,
+                            color: kPrimary,
+                          ),
                           title: const Text('Modifier le nom'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: _editName,
                         ),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.lock_outline, color: kPrimary),
+                          leading: const Icon(
+                            Icons.lock_outline,
+                            color: kPrimary,
+                          ),
                           title: const Text('Changer le mot de passe'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: _changePassword,
                         ),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.notifications_outlined, color: kPrimary),
+                          leading: const Icon(
+                            Icons.notifications_outlined,
+                            color: kPrimary,
+                          ),
                           title: const Text('Notifications'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen(),
+                            ),
                           ),
                         ),
                       ],
@@ -278,8 +376,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           label: 'Rôle',
                           value: kRoleLabels[user.role] ?? user.role,
                         ),
-                        InfoRow(icon: Icons.person_outline, label: 'Manager', value: user.manager_name),
-                        InfoRow(icon: Icons.calendar_today, label: 'Date de création', value: formatIsoDate(user.created_at)),
+                        InfoRow(
+                          icon: Icons.person_outline,
+                          label: 'Manager',
+                          value: user.manager_name,
+                        ),
+                        InfoRow(
+                          icon: Icons.calendar_today,
+                          label: 'Date de création',
+                          value: formatIsoDate(user.created_at),
+                        ),
                       ],
                     ),
                   ),
@@ -290,7 +396,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: const Text('Déconnexion'),
-                          content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+                          content: const Text(
+                            'Voulez-vous vraiment vous déconnecter ?',
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
@@ -298,7 +406,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             FilledButton(
                               onPressed: () => Navigator.pop(ctx, true),
-                              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
                               child: const Text('Déconnexion'),
                             ),
                           ],

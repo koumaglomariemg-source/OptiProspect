@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 import '../config/app_theme.dart';
 import '../providers/auth_provider.dart';
@@ -31,11 +32,22 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
   int _unreadCount = 0;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadUnread();
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _loadUnread(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUnread() async {
@@ -51,39 +63,183 @@ class _MainShellState extends State<MainShell> {
     if (u == null) return [];
     if (u.isAdmin) {
       return const [
-        Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard', section: 'Pilotage'),
-        Destination(TeamScreen(), Icons.people_outline, Icons.people, 'Équipe', section: 'Pilotage'),
-        Destination(ReferentielsScreen(), Icons.storage_outlined, Icons.storage, 'Référentiels', section: 'Configuration'),
-        Destination(PipelineTemplatesScreen(), Icons.linear_scale_outlined, Icons.linear_scale, 'Modèles', section: 'Configuration'),
-        Destination(AuditLogScreen(), Icons.history_outlined, Icons.history, 'Audit', section: 'Configuration'),
-        Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil', section: 'Compte'),
+        Destination(
+          DashboardScreen(),
+          Icons.dashboard_outlined,
+          Icons.dashboard,
+          'Dashboard',
+          section: 'Pilotage',
+        ),
+        Destination(
+          TeamScreen(),
+          Icons.people_outline,
+          Icons.people,
+          'Équipe',
+          section: 'Pilotage',
+        ),
+        Destination(
+          ReferentielsScreen(),
+          Icons.storage_outlined,
+          Icons.storage,
+          'Référentiels',
+          section: 'Configuration',
+        ),
+        Destination(
+          PipelineTemplatesScreen(),
+          Icons.linear_scale_outlined,
+          Icons.linear_scale,
+          'Modèles',
+          section: 'Configuration',
+        ),
+        Destination(
+          AuditLogScreen(),
+          Icons.history_outlined,
+          Icons.history,
+          'Audit',
+          section: 'Configuration',
+        ),
+        Destination(
+          ProfileScreen(),
+          Icons.person_outline,
+          Icons.person,
+          'Profil',
+          section: 'Compte',
+        ),
       ];
     }
     if (u.isManager) {
       return [
-        const Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
-        const Destination(DayScreen(), Icons.today_outlined, Icons.today, 'Ma journée'),
-        const Destination(MapScreen(embedded: true), Icons.map_outlined, Icons.map, 'Carte'),
-        const Destination(DevisScreen(), Icons.request_quote_outlined, Icons.request_quote, 'Devis'),
-        const Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche', section: 'Clientèle'),
-        const Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients', section: 'Clientèle'),
-        const Destination(PortefeuillesScreen(), Icons.people_alt_outlined, Icons.people_alt, 'Portefeuilles', section: 'Clientèle'),
-        const Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports', section: 'Pilotage'),
-        const Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions', section: 'Animation'),
-        const Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil', section: 'Compte'),
+        const Destination(
+          DashboardScreen(),
+          Icons.dashboard_outlined,
+          Icons.dashboard,
+          'Dashboard',
+        ),
+        const Destination(
+          KanbanScreen(),
+          Icons.table_chart_outlined,
+          Icons.table_chart,
+          'Tableau',
+        ),
+        const Destination(
+          DayScreen(),
+          Icons.today_outlined,
+          Icons.today,
+          'Ma journée',
+        ),
+        const Destination(
+          MapScreen(embedded: true),
+          Icons.map_outlined,
+          Icons.map,
+          'Carte',
+        ),
+        const Destination(
+          DevisScreen(),
+          Icons.request_quote_outlined,
+          Icons.request_quote,
+          'Devis',
+        ),
+        const Destination(
+          SearchScreen(),
+          Icons.search_outlined,
+          Icons.search,
+          'Recherche',
+          section: 'Clientèle',
+        ),
+        const Destination(
+          ClientsScreen(),
+          Icons.verified_outlined,
+          Icons.verified,
+          'Clients',
+          section: 'Clientèle',
+        ),
+        const Destination(
+          PortefeuillesScreen(),
+          Icons.people_alt_outlined,
+          Icons.people_alt,
+          'Portefeuilles',
+          section: 'Clientèle',
+        ),
+        const Destination(
+          ReportsScreen(),
+          Icons.description_outlined,
+          Icons.description,
+          'Rapports',
+          section: 'Pilotage',
+        ),
+        const Destination(
+          MeetingsScreen(),
+          Icons.event_outlined,
+          Icons.event,
+          'Réunions',
+          section: 'Animation',
+        ),
+        const Destination(
+          ProfileScreen(),
+          Icons.person_outline,
+          Icons.person,
+          'Profil',
+          section: 'Compte',
+        ),
       ];
     }
     return const [
-      Destination(KanbanScreen(), Icons.table_chart_outlined, Icons.table_chart, 'Tableau'),
+      Destination(
+        KanbanScreen(),
+        Icons.table_chart_outlined,
+        Icons.table_chart,
+        'Tableau',
+      ),
       Destination(DayScreen(), Icons.today_outlined, Icons.today, 'Ma journée'),
       Destination(MapScreen(), Icons.map_outlined, Icons.map, 'Carte'),
-      Destination(DevisScreen(), Icons.request_quote_outlined, Icons.request_quote, 'Devis'),
-      Destination(DashboardScreen(), Icons.dashboard_outlined, Icons.dashboard, 'Dashboard', section: 'Pilotage'),
-      Destination(ReportsScreen(), Icons.description_outlined, Icons.description, 'Rapports', section: 'Pilotage'),
-      Destination(SearchScreen(), Icons.search_outlined, Icons.search, 'Recherche', section: 'Clientèle'),
-      Destination(ClientsScreen(), Icons.verified_outlined, Icons.verified, 'Clients', section: 'Clientèle'),
-      Destination(MeetingsScreen(), Icons.event_outlined, Icons.event, 'Réunions', section: 'Clientèle'),
-      Destination(ProfileScreen(), Icons.person_outline, Icons.person, 'Profil', section: 'Compte'),
+      Destination(
+        DevisScreen(),
+        Icons.request_quote_outlined,
+        Icons.request_quote,
+        'Devis',
+      ),
+      Destination(
+        DashboardScreen(),
+        Icons.dashboard_outlined,
+        Icons.dashboard,
+        'Dashboard',
+        section: 'Pilotage',
+      ),
+      Destination(
+        ReportsScreen(),
+        Icons.description_outlined,
+        Icons.description,
+        'Rapports',
+        section: 'Pilotage',
+      ),
+      Destination(
+        SearchScreen(),
+        Icons.search_outlined,
+        Icons.search,
+        'Recherche',
+        section: 'Clientèle',
+      ),
+      Destination(
+        ClientsScreen(),
+        Icons.verified_outlined,
+        Icons.verified,
+        'Clients',
+        section: 'Clientèle',
+      ),
+      Destination(
+        MeetingsScreen(),
+        Icons.event_outlined,
+        Icons.event,
+        'Réunions',
+        section: 'Clientèle',
+      ),
+      Destination(
+        ProfileScreen(),
+        Icons.person_outline,
+        Icons.person,
+        'Profil',
+        section: 'Compte',
+      ),
     ];
   }
 
@@ -94,7 +250,9 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _openProfile() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
   }
 
   @override
@@ -134,7 +292,12 @@ class _MainShellState extends State<MainShell> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.asset('assets/icons/app_icon.png', width: 24, height: 24, fit: BoxFit.cover),
+              child: Image.asset(
+                'assets/icons/app_icon.png',
+                width: 24,
+                height: 24,
+                fit: BoxFit.cover,
+              ),
             ),
             const SizedBox(width: 8),
             Text(visible[active].label),
@@ -145,9 +308,9 @@ class _MainShellState extends State<MainShell> {
             IconButton(
               icon: const Icon(Icons.search),
               tooltip: 'Rechercher',
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              ),
+              onPressed: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SearchScreen())),
             ),
           Stack(
             clipBehavior: Clip.none,
@@ -164,12 +327,21 @@ class _MainShellState extends State<MainShell> {
                   child: IgnorePointer(
                     child: Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
                       child: Text(
                         _unreadCount > 9 ? '9+' : '$_unreadCount',
                         style: const TextStyle(
-                            color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -196,7 +368,13 @@ class _MainShellState extends State<MainShell> {
                     children: [
                       Icon(Icons.person, color: scheme.onSurface),
                       const SizedBox(width: 12),
-                      Text('Profil', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w600)),
+                      Text(
+                        'Profil',
+                        style: TextStyle(
+                          color: scheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -206,13 +384,21 @@ class _MainShellState extends State<MainShell> {
                     children: [
                       Icon(Icons.logout, color: scheme.error),
                       const SizedBox(width: 12),
-                      Text('Se déconnecter', style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
+                      Text(
+                        'Se déconnecter',
+                        style: TextStyle(
+                          color: scheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ];
             },
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
             color: Theme.of(context).colorScheme.surface,
             elevation: 8,
             child: Padding(
@@ -221,14 +407,21 @@ class _MainShellState extends State<MainShell> {
                 backgroundColor: Colors.white,
                 child: Text(
                   user.initials(),
-                  style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    color: kPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ),
           ),
         ],
       ),
-      body: IndexedStack(index: active, children: [for (final t in visible) t.screen]),
+      body: IndexedStack(
+        index: active,
+        children: [for (final t in visible) t.screen],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: active,
         onDestinationSelected: (i) {
@@ -277,7 +470,10 @@ class _MainShellState extends State<MainShell> {
                     backgroundColor: kPrimary.withValues(alpha: 0.15),
                     child: Text(
                       userName.isEmpty ? '?' : userName[0].toUpperCase(),
-                      style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: kPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -304,23 +500,34 @@ class _MainShellState extends State<MainShell> {
                       if (more[i].section != null &&
                           (i == 0 || more[i].section != more[i - 1].section))
                         Padding(
-                          padding: EdgeInsets.only(left: 16, top: i == 0 ? 4 : 12, bottom: 2),
+                          padding: EdgeInsets.only(
+                            left: 16,
+                            top: i == 0 ? 4 : 12,
+                            bottom: 2,
+                          ),
                           child: Text(
                             more[i].section!.toUpperCase(),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.8,
-                              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                              color: scheme.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                         ),
                       ListTile(
                         leading: Icon(more[i].icon, color: kPrimary),
-                        title: Text(more[i].label, style: TextStyle(color: scheme.onSurface)),
+                        title: Text(
+                          more[i].label,
+                          style: TextStyle(color: scheme.onSurface),
+                        ),
                         onTap: () {
                           Navigator.pop(ctx);
-                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => more[i].screen));
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => more[i].screen),
+                          );
                         },
                       ),
                     ],
@@ -343,5 +550,11 @@ class Destination {
   final String label;
   final String? section;
 
-  const Destination(this.screen, this.icon, this.selectedIcon, this.label, {this.section});
+  const Destination(
+    this.screen,
+    this.icon,
+    this.selectedIcon,
+    this.label, {
+    this.section,
+  });
 }

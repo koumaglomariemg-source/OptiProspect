@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 import '../config/app_theme.dart';
 import '../models/models.dart';
@@ -22,6 +23,7 @@ class _DayScreenState extends State<DayScreen> {
   DayData? _data;
   String? _error;
   int? _busy;
+  Timer? _pollTimer;
 
   ApiClient get _api => context.read<AuthProvider>().api;
 
@@ -29,6 +31,13 @@ class _DayScreenState extends State<DayScreen> {
   void initState() {
     super.initState();
     _load();
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -48,7 +57,9 @@ class _DayScreenState extends State<DayScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       setState(() => _busy = null);
@@ -65,7 +76,9 @@ class _DayScreenState extends State<DayScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -74,30 +87,53 @@ class _DayScreenState extends State<DayScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     if (_error != null) {
-      return Scaffold(body: ErrorRetry(message: _error!, onRetry: _load));
+      return Scaffold(
+        body: ErrorRetry(message: _error!, onRetry: _load),
+      );
     }
     final data = _data;
     if (data == null) {
       return const Scaffold(body: SkeletonScreen());
     }
     final kpis = <(String, String, IconData, Color)>[
-      ('Relances du jour', '${data.countRelancesToday}', Icons.alarm, Colors.orange),
+      (
+        'Relances du jour',
+        '${data.countRelancesToday}',
+        Icons.alarm,
+        Colors.orange,
+      ),
       ('RDV (7j)', '${data.countMeetings}', Icons.event, kPrimary),
-      ('Devis en cours', '${data.countDevisPending}', Icons.request_quote, Colors.blue),
-      ('À risque', '${data.countAtRisk}', Icons.warning_amber_rounded, Colors.red),
+      (
+        'Devis en cours',
+        '${data.countDevisPending}',
+        Icons.request_quote,
+        Colors.blue,
+      ),
+      (
+        'À risque',
+        '${data.countAtRisk}',
+        Icons.warning_amber_rounded,
+        Colors.red,
+      ),
     ];
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.xl,
+          ),
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
                 final columns = constraints.maxWidth >= 620 ? 4 : 2;
                 final gap = AppSpacing.md;
-                final cardWidth = (constraints.maxWidth - gap * (columns - 1)) / columns;
+                final cardWidth =
+                    (constraints.maxWidth - gap * (columns - 1)) / columns;
                 return Wrap(
                   spacing: gap,
                   runSpacing: gap,
@@ -105,7 +141,12 @@ class _DayScreenState extends State<DayScreen> {
                     for (final k in kpis)
                       SizedBox(
                         width: cardWidth,
-                        child: KpiCard(label: k.$1, value: k.$2, icon: k.$3, color: k.$4),
+                        child: KpiCard(
+                          label: k.$1,
+                          value: k.$2,
+                          icon: k.$3,
+                          color: k.$4,
+                        ),
                       ),
                   ],
                 );
@@ -135,12 +176,19 @@ class _DayScreenState extends State<DayScreen> {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 18,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13.5),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 13.5,
+              ),
             ),
           ),
         ],
@@ -154,20 +202,28 @@ class _DayScreenState extends State<DayScreen> {
       title: 'Relances à faire',
       child: Column(
         children: [
-          if (relances.isEmpty) _empty('Aucune relance à faire.', Icons.check_circle_outline),
+          if (relances.isEmpty)
+            _empty('Aucune relance à faire.', Icons.check_circle_outline),
           for (final r in relances)
             Card(
               margin: EdgeInsets.only(bottom: AppSpacing.sm),
               elevation: 0,
-              color: (r.isToday ? Colors.red : Colors.orange).withValues(alpha: 0.06),
+              color: (r.isToday ? Colors.red : Colors.orange).withValues(
+                alpha: 0.06,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 side: BorderSide(
-                  color: (r.isToday ? Colors.red : Colors.orange).withValues(alpha: 0.25),
+                  color: (r.isToday ? Colors.red : Colors.orange).withValues(
+                    alpha: 0.25,
+                  ),
                 ),
               ),
               child: ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
                 leading: Icon(
                   r.isToday ? Icons.warning_amber_rounded : Icons.alarm,
                   color: r.isToday ? Colors.red : Colors.orange,
@@ -176,24 +232,38 @@ class _DayScreenState extends State<DayScreen> {
                   '${r.name}${r.company != null && r.company!.isNotEmpty ? ' · ${r.company}' : ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    [r.nextAction ?? '', formatIsoDateTime(r.nextActionDate)]
-                        .where((s) => s.isNotEmpty && s != '—')
-                        .join(' • '),
+                    [
+                      r.nextAction ?? '',
+                      formatIsoDateTime(r.nextActionDate),
+                    ].where((s) => s.isNotEmpty && s != '—').join(' • '),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 trailing: _busy == r.id
                     ? const SizedBox(
-                        width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : IconButton(
-                        icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
+                        icon: const Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.green,
+                          size: 22,
+                        ),
                         tooltip: 'Relance effectuée',
                         onPressed: () => _markDone(r),
                       ),
@@ -218,9 +288,14 @@ class _DayScreenState extends State<DayScreen> {
               margin: EdgeInsets.only(bottom: AppSpacing.sm),
               elevation: 0,
               color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              ),
               child: ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
                 leading: Container(
                   width: 40,
                   height: 40,
@@ -228,13 +303,20 @@ class _DayScreenState extends State<DayScreen> {
                     color: kPrimary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.person_search_outlined, color: kPrimary, size: 20),
+                  child: const Icon(
+                    Icons.person_search_outlined,
+                    color: kPrimary,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   '${r.name}${r.company != null && r.company!.isNotEmpty ? ' · ${r.company}' : ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -244,7 +326,10 @@ class _DayScreenState extends State<DayScreen> {
                         : 'Aucune activité enregistrée',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 onTap: () => _openProspect(r.id),
@@ -261,13 +346,16 @@ class _DayScreenState extends State<DayScreen> {
       title: 'Prochains rendez-vous',
       child: Column(
         children: [
-          if (meetings.isEmpty) _empty('Aucun rendez-vous à venir.', Icons.event_available),
+          if (meetings.isEmpty)
+            _empty('Aucun rendez-vous à venir.', Icons.event_available),
           for (final m in meetings)
             Card(
               margin: EdgeInsets.only(bottom: AppSpacing.sm),
               elevation: 0,
               color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              ),
               child: ListTile(
                 leading: Container(
                   width: 40,
@@ -278,10 +366,15 @@ class _DayScreenState extends State<DayScreen> {
                   ),
                   child: const Icon(Icons.event, color: kPrimary, size: 20),
                 ),
-                title: Text(m.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                title: Text(
+                  m.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
@@ -290,11 +383,18 @@ class _DayScreenState extends State<DayScreen> {
                         .join(' • '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 trailing: m.meetingLink != null && m.meetingLink!.isNotEmpty
-                    ? const Icon(Icons.videocam_outlined, color: kPrimary, size: 20)
+                    ? const Icon(
+                        Icons.videocam_outlined,
+                        color: kPrimary,
+                        size: 20,
+                      )
                     : null,
               ),
             ),
@@ -309,7 +409,8 @@ class _DayScreenState extends State<DayScreen> {
       title: 'Affaires à risque',
       child: Column(
         children: [
-          if (atRisk.isEmpty) _empty('Aucune affaire à risque.', Icons.verified_outlined),
+          if (atRisk.isEmpty)
+            _empty('Aucune affaire à risque.', Icons.verified_outlined),
           for (final r in atRisk)
             Card(
               margin: EdgeInsets.only(bottom: AppSpacing.sm),
@@ -320,7 +421,10 @@ class _DayScreenState extends State<DayScreen> {
                 side: BorderSide(color: Colors.red.withValues(alpha: 0.18)),
               ),
               child: ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
                 leading: Container(
                   width: 40,
                   height: 40,
@@ -328,13 +432,20 @@ class _DayScreenState extends State<DayScreen> {
                     color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.trending_down, color: Colors.red, size: 20),
+                  child: const Icon(
+                    Icons.trending_down,
+                    color: Colors.red,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   '${r.name}${r.company != null && r.company!.isNotEmpty ? ' · ${r.company}' : ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -344,7 +455,10 @@ class _DayScreenState extends State<DayScreen> {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Badge(label: r.reasonLabel, color: Colors.red),
-                      Badge(label: '${r.days} j', color: scheme.onSurfaceVariant),
+                      Badge(
+                        label: '${r.days} j',
+                        color: scheme.onSurfaceVariant,
+                      ),
                       if (r.value > 0)
                         Badge(label: money(r.value), color: kPrimary),
                     ],
@@ -364,13 +478,16 @@ class _DayScreenState extends State<DayScreen> {
       title: 'Devis en cours',
       child: Column(
         children: [
-          if (devis.isEmpty) _empty('Aucun devis en cours.', Icons.request_quote),
+          if (devis.isEmpty)
+            _empty('Aucun devis en cours.', Icons.request_quote),
           for (final d in devis)
             Card(
               margin: EdgeInsets.only(bottom: AppSpacing.sm),
               elevation: 0,
               color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              ),
               child: ListTile(
                 leading: Container(
                   width: 40,
@@ -379,19 +496,31 @@ class _DayScreenState extends State<DayScreen> {
                     color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.request_quote, color: Colors.blue, size: 20),
+                  child: const Icon(
+                    Icons.request_quote,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
                 ),
-                title: Text(d.titre,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                title: Text(
+                  d.titre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     '${d.reference} · ${d.prospectName ?? ''} · ${money(d.montant)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 trailing: Badge(
@@ -449,14 +578,20 @@ class _DayScreenState extends State<DayScreen> {
                           '${i.prospectName} · ${labels[i.type] ?? i.type}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           i.content,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -464,7 +599,10 @@ class _DayScreenState extends State<DayScreen> {
                   const SizedBox(width: 8),
                   Text(
                     formatIsoDateTime(i.createdAt),
-                    style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

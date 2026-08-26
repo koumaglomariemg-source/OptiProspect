@@ -106,14 +106,26 @@ class ApiClient {
   }
 
   // --- Auth ---
-  Future<({User user, String token})> login(String email, String password) async {
-    final data = await post('/api/auth/login', body: {'email': email, 'password': password});
+  Future<({User user, String token})> login(
+    String email,
+    String password,
+  ) async {
+    final data = await post(
+      '/api/auth/login',
+      body: {'email': email, 'password': password},
+    );
     return _authResult(data);
   }
 
-  Future<({User user, String token})> register(String name, String email, String password) async {
-    final data =
-        await post('/api/auth/register', body: {'name': name, 'email': email, 'password': password});
+  Future<({User user, String token})> register(
+    String name,
+    String email,
+    String password,
+  ) async {
+    final data = await post(
+      '/api/auth/register',
+      body: {'name': name, 'email': email, 'password': password},
+    );
     return _authResult(data);
   }
 
@@ -161,12 +173,18 @@ class ApiClient {
     if (stage != null && stage.isNotEmpty) query['stage'] = stage;
     if (source != null && source.isNotEmpty) query['source'] = source;
     if (assignedToId != null) query['assigned_to'] = assignedToId;
-    if (dateFrom != null && dateFrom.isNotEmpty) query['dateProspectionFrom'] = dateFrom;
-    if (dateTo != null && dateTo.isNotEmpty) query['dateProspectionTo'] = dateTo;
-    if (nextActionFrom != null && nextActionFrom.isNotEmpty) query['prochainRdvFrom'] = nextActionFrom;
-    if (nextActionTo != null && nextActionTo.isNotEmpty) query['prochainRdvTo'] = nextActionTo;
-    if (contratDepose != null) query['contrat_depose'] = contratDepose ? 'true' : 'false';
-    if (contratSigne != null) query['contrat_signe'] = contratSigne ? 'true' : 'false';
+    if (dateFrom != null && dateFrom.isNotEmpty)
+      query['dateProspectionFrom'] = dateFrom;
+    if (dateTo != null && dateTo.isNotEmpty)
+      query['dateProspectionTo'] = dateTo;
+    if (nextActionFrom != null && nextActionFrom.isNotEmpty)
+      query['prochainRdvFrom'] = nextActionFrom;
+    if (nextActionTo != null && nextActionTo.isNotEmpty)
+      query['prochainRdvTo'] = nextActionTo;
+    if (contratDepose != null)
+      query['contrat_depose'] = contratDepose ? 'true' : 'false';
+    if (contratSigne != null)
+      query['contrat_signe'] = contratSigne ? 'true' : 'false';
     if (optionFraisScolaire != null) {
       query['option_frais_scolaire'] = optionFraisScolaire ? 'true' : 'false';
     }
@@ -174,11 +192,15 @@ class ApiClient {
     if (limit != null) query['limit'] = limit;
     final data = await get('/api/prospects', query: query);
     if (data is Map && data['data'] is List) {
-      final rows = (data['data'] as List).whereType<Map<String, dynamic>>().toList();
+      final rows = (data['data'] as List)
+          .whereType<Map<String, dynamic>>()
+          .toList();
       final total = toInt(data['total']);
       return (rows.map((e) => Prospect.fromJson(e)).toList(), total);
     }
-    final rows = data is List ? data.whereType<Map<String, dynamic>>().toList() : <Map<String, dynamic>>[];
+    final rows = data is List
+        ? data.whereType<Map<String, dynamic>>().toList()
+        : <Map<String, dynamic>>[];
     return (rows.map((e) => Prospect.fromJson(e)).toList(), null);
   }
 
@@ -234,8 +256,14 @@ class ApiClient {
     return _rows(data).map((e) => Interaction.fromJson(e)).toList();
   }
 
-  Future<Interaction> addInteraction(int prospectId, Map<String, dynamic> body) async {
-    final data = await post('/api/prospects/$prospectId/interactions', body: body);
+  Future<Interaction> addInteraction(
+    int prospectId,
+    Map<String, dynamic> body,
+  ) async {
+    final data = await post(
+      '/api/prospects/$prospectId/interactions',
+      body: body,
+    );
     return Interaction.fromJson(data as Map<String, dynamic>);
   }
 
@@ -257,11 +285,19 @@ class ApiClient {
   Future<MessageResult> sendMessage(int id, Map<String, dynamic> body) async {
     final data = await post('/api/prospects/$id/send-message', body: body);
     if (data is Map<String, dynamic>) return MessageResult.fromJson(data);
-    return const MessageResult(channel: 'email', delivered: false, skipped: true);
+    return const MessageResult(
+      channel: 'email',
+      delivered: false,
+      skipped: true,
+    );
   }
 
   // --- Devis ---
-  Future<List<Devis>> devis({int? prospectId, String? statut, String? search}) async {
+  Future<List<Devis>> devis({
+    int? prospectId,
+    String? statut,
+    String? search,
+  }) async {
     final query = <String, dynamic>{};
     if (prospectId != null) query['prospect_id'] = prospectId;
     if (statut != null && statut.isNotEmpty) query['statut'] = statut;
@@ -286,12 +322,18 @@ class ApiClient {
   }
 
   Future<Devis> validateDevis(int id, {String comment = ''}) async {
-    final data = await post('/api/devis/$id/validate', body: {'comment': comment});
+    final data = await post(
+      '/api/devis/$id/validate',
+      body: {'comment': comment},
+    );
     return Devis.fromJson(data as Map<String, dynamic>);
   }
 
   Future<Devis> refuseDevis(int id, {String comment = ''}) async {
-    final data = await post('/api/devis/$id/refuse', body: {'comment': comment});
+    final data = await post(
+      '/api/devis/$id/refuse',
+      body: {'comment': comment},
+    );
     return Devis.fromJson(data as Map<String, dynamic>);
   }
 
@@ -350,46 +392,96 @@ class ApiClient {
   }
 
   // --- Stats / Dashboard ---
-  Future<StatsOverview> statsOverview([Map<String, dynamic> params = const {}]) async {
-    final data = await get('/api/stats/overview', query: params.isEmpty ? null : params);
+  Future<StatsOverview> statsOverview([
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final data = await get(
+      '/api/stats/overview',
+      query: params.isEmpty ? null : params,
+    );
     return StatsOverview.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<List<ByUserStat>> statsByUser([Map<String, dynamic> params = const {}]) async {
-    final data = await get('/api/stats/by-user', query: params.isEmpty ? null : params);
+  Future<List<ByUserStat>> statsByUser([
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final data = await get(
+      '/api/stats/by-user',
+      query: params.isEmpty ? null : params,
+    );
     return _rows(data).map((e) => ByUserStat.fromJson(e)).toList();
   }
 
-  Future<List<TimelinePoint>> statsTimeline(int days, [Map<String, dynamic> params = const {}]) async {
+  Future<List<TimelinePoint>> statsTimeline(
+    int days, [
+    Map<String, dynamic> params = const {},
+  ]) async {
     final query = {'days': days, ...params};
     final data = await get('/api/stats/timeline', query: query);
     return _rows(data).map((e) => TimelinePoint.fromJson(e)).toList();
   }
 
-  Future<Forecast> statsForecast([Map<String, dynamic> params = const {}]) async {
-    final data = await get('/api/stats/forecast', query: params.isEmpty ? null : params);
+  Future<Forecast> statsForecast([
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final data = await get(
+      '/api/stats/forecast',
+      query: params.isEmpty ? null : params,
+    );
     return Forecast.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<TargetsResult> statsTargets(String yearMonth, [Map<String, dynamic> params = const {}]) async {
+  Future<TargetsResult> statsTargets(
+    String yearMonth, [
+    Map<String, dynamic> params = const {},
+  ]) async {
     final query = {'year_month': yearMonth, ...params};
     final data = await get('/api/stats/targets', query: query);
     return TargetsResult.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<List<ClientInfo>> clients([Map<String, dynamic> params = const {}]) async {
-    final data = await get('/api/stats/clients', query: params.isEmpty ? null : params);
+  Future<List<ClientInfo>> clients([
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final data = await get(
+      '/api/stats/clients',
+      query: params.isEmpty ? null : params,
+    );
     return _rows(data).map((e) => ClientInfo.fromJson(e)).toList();
   }
 
-  Future<List<AtRiskItem>> statsAtRisk([Map<String, dynamic> params = const {}]) async {
-    final data = await get('/api/stats/at-risk', query: params.isEmpty ? null : params);
+  Future<List<AtRiskItem>> statsAtRisk([
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final data = await get(
+      '/api/stats/at-risk',
+      query: params.isEmpty ? null : params,
+    );
     return _rows(data).map((e) => AtRiskItem.fromJson(e)).toList();
   }
 
-  Future<AgingStats> statsAging([Map<String, dynamic> params = const {}]) async {
-    final data = await get('/api/stats/aging', query: params.isEmpty ? null : params);
+  Future<AgingStats> statsAging([
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final data = await get(
+      '/api/stats/aging',
+      query: params.isEmpty ? null : params,
+    );
     return AgingStats.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> statsCounts() async {
+    final data = await get('/api/stats/counts');
+    return data is Map<String, dynamic> ? data : {};
+  }
+
+  Future<Map<String, dynamic>> statsProspection([
+    int days = 30,
+    Map<String, dynamic> params = const {},
+  ]) async {
+    final query = {'days': days, ...params};
+    final data = await get('/api/stats/prospection', query: query);
+    return data is Map<String, dynamic> ? data : {};
   }
 
   Future<DayData> day() async {
@@ -397,14 +489,43 @@ class ApiClient {
     return DayData.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<void> setTarget(int userId, String yearMonth, double targetValue) async {
-    await put('/api/users/$userId/target',
-        body: {'year_month': yearMonth, 'target_value': targetValue});
+  Future<void> setTarget(
+    int userId,
+    String yearMonth,
+    double targetValue,
+  ) async {
+    await put(
+      '/api/users/$userId/target',
+      body: {'year_month': yearMonth, 'target_value': targetValue},
+    );
+  }
+
+  Future<void> deleteTarget(int userId, String yearMonth) async {
+    await delete('/api/users/$userId/target/$yearMonth');
+  }
+
+  // --- Public (sans authentification requise) ---
+  Future<Map<String, dynamic>> publicProspectInfo(int id, String token) async {
+    final data = await get(
+      '/api/public/prospects/$id/info',
+      query: {'token': token},
+    );
+    return data is Map<String, dynamic> ? data : {};
+  }
+
+  Future<Map<String, dynamic>> publicRespond(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final data = await post('/api/public/prospects/$id/respond', body: body);
+    return data is Map<String, dynamic> ? data : {};
   }
 
   // --- Rapports ---
   Future<List<Report>> reports({String? status}) async {
-    final query = status != null && status.isNotEmpty ? {'status': status} : null;
+    final query = status != null && status.isNotEmpty
+        ? {'status': status}
+        : null;
     final data = await get('/api/reports', query: query);
     return _rows(data).map((e) => Report.fromJson(e)).toList();
   }
@@ -414,9 +535,15 @@ class ApiClient {
     return Report.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<Report> reviewReport(int id, String decision, {String comment = ''}) async {
-    final data =
-        await post('/api/reports/$id/review', body: {'decision': decision, 'comment': comment});
+  Future<Report> reviewReport(
+    int id,
+    String decision, {
+    String comment = '',
+  }) async {
+    final data = await post(
+      '/api/reports/$id/review',
+      body: {'decision': decision, 'comment': comment},
+    );
     return Report.fromJson(data as Map<String, dynamic>);
   }
 
@@ -451,12 +578,17 @@ class ApiClient {
     return _rows(data).map((e) => PipelineTemplate.fromJson(e)).toList();
   }
 
-  Future<PipelineTemplate> createPipelineTemplate(Map<String, dynamic> body) async {
+  Future<PipelineTemplate> createPipelineTemplate(
+    Map<String, dynamic> body,
+  ) async {
     final data = await post('/api/pipeline-templates', body: body);
     return PipelineTemplate.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<PipelineTemplate> updatePipelineTemplate(int id, Map<String, dynamic> body) async {
+  Future<PipelineTemplate> updatePipelineTemplate(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
     final data = await put('/api/pipeline-templates/$id', body: body);
     return PipelineTemplate.fromJson(data as Map<String, dynamic>);
   }
@@ -480,7 +612,9 @@ class ApiClient {
     return UserDetail.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<({User user, String emailStatus})> createUser(Map<String, dynamic> body) async {
+  Future<({User user, String emailStatus})> createUser(
+    Map<String, dynamic> body,
+  ) async {
     final data = await post('/api/users', body: body);
     final m = data as Map<String, dynamic>;
     return (
@@ -502,7 +636,9 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl/api/prospects/import');
     final request = http.MultipartRequest('POST', uri)
       ..headers.addAll(_headers())
-      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: 'prospects.csv'));
+      ..files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: 'prospects.csv'),
+      );
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
     return _decode(response);

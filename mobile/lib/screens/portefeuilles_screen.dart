@@ -48,7 +48,8 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
     }
   }
 
-  List<User> get _commerciaux => (_users ?? []).where((u) => u.role == 'commercial').toList();
+  List<User> get _commerciaux =>
+      (_users ?? []).where((u) => u.role == 'commercial').toList();
 
   int _countFor(String? userId) {
     final list = _prospects ?? [];
@@ -60,18 +61,24 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = (_prospects ?? []).where((p) {
-      if (_selectedUserId == null) return true;
-      if (_selectedUserId == 'none') return p.assignedTo == null;
-      return p.assignedTo == int.tryParse(_selectedUserId!);
-    }).where((p) {
-      if (_search.isEmpty) return true;
-      final q = _search.toLowerCase();
-      return p.name.toLowerCase().contains(q) ||
-          (p.company?.toLowerCase().contains(q) ?? false) ||
-          (p.email?.toLowerCase().contains(q) ?? false);
-    }).toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final filtered =
+        (_prospects ?? [])
+            .where((p) {
+              if (_selectedUserId == null) return true;
+              if (_selectedUserId == 'none') return p.assignedTo == null;
+              return p.assignedTo == int.tryParse(_selectedUserId!);
+            })
+            .where((p) {
+              if (_search.isEmpty) return true;
+              final q = _search.toLowerCase();
+              return p.name.toLowerCase().contains(q) ||
+                  (p.company?.toLowerCase().contains(q) ?? false) ||
+                  (p.email?.toLowerCase().contains(q) ?? false);
+            })
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +95,10 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
                   children: [
                     _chip(null, 'Tous (${_countFor(null)})'),
                     for (final u in _commerciaux)
-                      _chip(u.id.toString(), '${u.name} (${_countFor(u.id.toString())})'),
+                      _chip(
+                        u.id.toString(),
+                        '${u.name} (${_countFor(u.id.toString())})',
+                      ),
                     _chip('none', 'Non assignés (${_countFor('none')})'),
                   ],
                 ),
@@ -111,18 +121,18 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _prospects == null
-              ? const SkeletonScreen(showStats: false)
-              : filtered.isEmpty
-                  ? const EmptyState(message: 'Aucun prospect')
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(12),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, i) => _row(filtered[i]),
-                      ),
-                    ),
+          ? const SkeletonScreen(showStats: false)
+          : filtered.isEmpty
+          ? const EmptyState(message: 'Aucun prospect')
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(12),
+                itemCount: filtered.length,
+                itemBuilder: (context, i) => _row(filtered[i]),
+              ),
+            ),
     );
   }
 
@@ -141,7 +151,9 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
   Widget _row(Prospect p) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -155,19 +167,30 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
                       final fresh = await _api.prospect(p.id);
                       if (!mounted) return;
                       await Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => ProspectDetailScreen(prospect: fresh)),
+                        MaterialPageRoute(
+                          builder: (_) => ProspectDetailScreen(prospect: fresh),
+                        ),
                       );
                       _load();
                     },
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                         Text(
-                          [p.company ?? '', 'créé le ${formatIsoDate(p.createdAt)}']
-                              .where((s) => s.isNotEmpty && s != '—')
-                              .join(' • '),
-                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          p.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          [
+                            p.company ?? '',
+                            'créé le ${formatIsoDate(p.createdAt)}',
+                          ].where((s) => s.isNotEmpty && s != '—').join(' • '),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -179,17 +202,28 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Text('Assigné à : ',
-                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(
+                  'Assigné à : ',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 Expanded(
                   child: DropdownButtonFormField<int?>(
                     initialValue: p.assignedTo,
                     isDense: true,
                     decoration: const InputDecoration(border: InputBorder.none),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Non assigné')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Non assigné'),
+                      ),
                       for (final u in _commerciaux)
-                        DropdownMenuItem(value: u.id, child: Text(u.name, overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(
+                          value: u.id,
+                          child: Text(u.name, overflow: TextOverflow.ellipsis),
+                        ),
                     ],
                     onChanged: _loadingAssign
                         ? null
@@ -197,20 +231,24 @@ class _PortefeuillesScreenState extends State<PortefeuillesScreen> {
                             setState(() => _loadingAssign = true);
                             try {
                               await _api.updateProspect(p.id, {
-                                if (v != null) 'assigned_to': v,
+                                'assigned_to': v,
                               });
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Prospect réaffecté')),
+                                  const SnackBar(
+                                    content: Text('Prospect réaffecté'),
+                                  ),
                                 );
                               }
                             } catch (e) {
                               if (mounted) {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(content: Text(e.toString())));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())),
+                                );
                               }
                             } finally {
-                              if (mounted) setState(() => _loadingAssign = false);
+                              if (mounted)
+                                setState(() => _loadingAssign = false);
                               _load();
                             }
                           },

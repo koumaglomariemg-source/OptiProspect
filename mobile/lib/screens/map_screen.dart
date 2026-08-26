@@ -25,12 +25,25 @@ class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
   List<Prospect>? _prospects;
   String? _error;
+  String _search = '';
+  String? _stage;
+  double _zoom = 10;
 
   ApiClient get _api => context.read<AuthProvider>().api;
 
   List<Prospect> get _positioned => (_prospects ?? [])
       .where((p) => p.latitude != null && p.longitude != null)
       .toList();
+
+  List<Prospect> get _filtered {
+    final q = _search.trim().toLowerCase();
+    return _positioned.where((p) {
+      if (_stage != null && p.stage != _stage) return false;
+      if (q.isEmpty) return true;
+      return p.name.toLowerCase().contains(q) ||
+          (p.company ?? '').toLowerCase().contains(q);
+    }).toList();
+  }
 
   @override
   void initState() {
@@ -60,10 +73,7 @@ class _MapScreenState extends State<MapScreen> {
             for (final p in positioned) LatLng(p.latitude!, p.longitude!),
           ]);
           _mapController.fitCamera(
-            CameraFit.bounds(
-              bounds: bounds,
-              padding: const EdgeInsets.all(48),
-            ),
+            CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(48)),
           );
         });
       }
@@ -74,8 +84,9 @@ class _MapScreenState extends State<MapScreen> {
 
   void _openProspect(Prospect p) async {
     if (!mounted) return;
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => ProspectDetailScreen(prospect: p)));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ProspectDetailScreen(prospect: p)),
+    );
   }
 
   void _showDetails(Prospect p) {
@@ -86,11 +97,18 @@ class _MapScreenState extends State<MapScreen> {
       showDragHandle: true,
       backgroundColor: scheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusLg)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,17 +134,26 @@ class _MapScreenState extends State<MapScreen> {
                       children: [
                         Text(
                           p.name,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         if (p.company != null && p.company!.isNotEmpty)
                           Text(
                             p.company!,
-                            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
                       ],
                     ),
                   ),
-                  Badge(label: kStageLabels[p.stage] ?? p.stage ?? '', color: color),
+                  Badge(
+                    label: kStageLabels[p.stage] ?? p.stage ?? '',
+                    color: color,
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -135,9 +162,15 @@ class _MapScreenState extends State<MapScreen> {
                 runSpacing: 8,
                 children: [
                   if (p.quartier != null && p.quartier!.isNotEmpty)
-                    InfoRow(icon: Icons.location_on_outlined, label: p.quartier!),
+                    InfoRow(
+                      icon: Icons.location_on_outlined,
+                      label: p.quartier!,
+                    ),
                   if (p.value > 0)
-                    InfoRow(icon: Icons.payments_outlined, label: money(p.value)),
+                    InfoRow(
+                      icon: Icons.payments_outlined,
+                      label: money(p.value),
+                    ),
                   if (p.nextActionDate != null)
                     InfoRow(
                       icon: Icons.event_outlined,
@@ -150,7 +183,10 @@ class _MapScreenState extends State<MapScreen> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     p.adresse!,
-                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               const SizedBox(height: 16),
@@ -175,127 +211,196 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: widget.embedded ? null : AppBar(title: const Text('Carte')),
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _prospects == null
-              ? const Center(child: CircularProgressIndicator())
-              : Stack(
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: const LatLng(6.1319, 1.2228),
+                    initialZoom: 10,
+                    backgroundColor: scheme.surfaceContainerLowest,
+                    onTap: (_, __) {},
+                    onPositionChanged: (camera, _) {
+                      if ((camera.zoom - _zoom).abs() >= 0.5) {
+                        setState(() => _zoom = camera.zoom);
+                      }
+                    },
+                  ),
                   children: [
-                    FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: const LatLng(6.1319, 1.2228),
-                        initialZoom: 10,
-                        backgroundColor: scheme.surfaceContainerLowest,
-                        onTap: (_, __) {},
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          maxZoom: 19,
-                          userAgentPackageName: 'com.optiprospect.app',
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            for (final p in _positioned)
-                              Marker(
-                                point: LatLng(p.latitude!, p.longitude!),
-                                width: 190,
-                                height: 36,
-                                alignment: Alignment.centerLeft,
-                                child: GestureDetector(
-                                  onTap: () => _showDetails(p),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 34,
-                                        height: 34,
+                    TileLayer(
+                      urlTemplate: isDark
+                          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                          : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      subdomains: isDark
+                          ? const ['a', 'b', 'c', 'd']
+                          : const [],
+                      maxZoom: 19,
+                      userAgentPackageName: 'com.optiprospect.app',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        for (final p in _filtered)
+                          Marker(
+                            point: LatLng(p.latitude!, p.longitude!),
+                            width: 190,
+                            height: 36,
+                            alignment: Alignment.centerLeft,
+                            child: GestureDetector(
+                              onTap: () => _showDetails(p),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      color: stageColor(
+                                        p.stage ?? 'identification',
+                                      ),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: scheme.surface,
+                                        width: 3,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.25,
+                                          ),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        initials(p.name),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (_zoom >= 7) const SizedBox(width: 6),
+                                  if (_zoom >= 7)
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: stageColor(p.stage ?? 'identification'),
-                                          shape: BoxShape.circle,
+                                          color: scheme.surface.withValues(
+                                            alpha: 0.94,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
-                                            color: scheme.surface,
-                                            width: 3,
+                                            color: scheme.outlineVariant,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withValues(alpha: 0.25),
-                                              blurRadius: 6,
-                                              offset: const Offset(0, 2),
+                                              color: Colors.black.withValues(
+                                                alpha: 0.12,
+                                              ),
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
                                             ),
                                           ],
                                         ),
-                                        child: Center(
-                                          child: Text(
-                                            initials(p.name),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                        child: Text(
+                                          p.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: scheme.onSurface,
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: scheme.surface.withValues(alpha: 0.94),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: scheme.outlineVariant),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(alpha: 0.12),
-                                                blurRadius: 3,
-                                                offset: const Offset(0, 1),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Text(
-                                            p.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: scheme.onSurface,
-                                            ),
-                                          ),
-                                        ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  right: 12,
+                  child: Material(
+                    color: scheme.surface.withValues(alpha: 0.92),
+                    elevation: 2,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 40,
+                                  child: TextField(
+                                    decoration: InputDecoration(
+                                      hintText: 'Rechercher…',
+                                      prefixIcon: const Icon(
+                                        Icons.search,
+                                        size: 18,
                                       ),
-                                    ],
+                                      isDense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                          ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onChanged: (v) =>
+                                        setState(() => _search = v),
                                   ),
                                 ),
                               ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      right: 12,
-                      child: Material(
-                        color: scheme.surface.withValues(alpha: 0.92),
-                        elevation: 2,
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          child: Row(
-                            children: [
-                              Icon(Icons.map_outlined, size: 18, color: kPrimary),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '${_positioned.length} prospect(s) positionné(s) sur ${_prospects?.length ?? 0}',
-                                  style: TextStyle(fontSize: 13, color: scheme.onSurface),
+                              PopupMenuButton<String?>(
+                                tooltip: 'Filtrer par étape',
+                                icon: Icon(
+                                  Icons.filter_list,
+                                  color: _stage != null
+                                      ? kPrimary
+                                      : scheme.onSurfaceVariant,
                                 ),
+                                onSelected: (v) => setState(() => _stage = v),
+                                itemBuilder: (ctx) => [
+                                  const PopupMenuItem<String?>(
+                                    value: null,
+                                    child: Text('Toutes les étapes'),
+                                  ),
+                                  for (final s in kStages)
+                                    PopupMenuItem<String?>(
+                                      value: s,
+                                      child: Text(kStageLabels[s] ?? s),
+                                    ),
+                                ],
                               ),
                               IconButton(
                                 visualDensity: VisualDensity.compact,
@@ -305,64 +410,105 @@ class _MapScreenState extends State<MapScreen> {
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
-                    if (_positioned.isEmpty)
-                      Center(
-                        child: Material(
-                          color: scheme.surface,
-                          elevation: 2,
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.location_off_outlined, size: 36, color: scheme.onSurfaceVariant),
-                                const SizedBox(height: 10),
-                                const Text(
-                                  "Aucun prospect n'a de coordonnées GPS",
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "Renseignez la latitude / longitude d'un prospect pour le voir apparaître ici.",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: 16,
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Material(
-                          color: scheme.surface.withValues(alpha: 0.92),
-                          elevation: 2,
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                for (final s in _visibleStages()) ...[
-                                  _LegendDot(color: stageColor(s), label: kStageLabels[s] ?? s),
-                                  if (s != _visibleStages().last) const SizedBox(width: 10),
-                                ],
+                                Icon(
+                                  Icons.place_outlined,
+                                  size: 14,
+                                  color: kPrimary,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    '${_filtered.length} affiché(s) sur ${_positioned.length} positionné(s)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: scheme.onSurface,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (_positioned.isEmpty)
+                  Center(
+                    child: Material(
+                      color: scheme.surface,
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.location_off_outlined,
+                              size: 36,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              "Aucun prospect n'a de coordonnées GPS",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Renseignez la latitude / longitude d'un prospect pour le voir apparaître ici.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 16,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Material(
+                      color: scheme.surface.withValues(alpha: 0.92),
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final s in _visibleStages()) ...[
+                              _LegendDot(
+                                color: stageColor(s),
+                                label: kStageLabels[s] ?? s,
+                              ),
+                              if (s != _visibleStages().last)
+                                const SizedBox(width: 10),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
+              ],
+            ),
     );
   }
 
@@ -405,4 +551,3 @@ class _LegendDot extends StatelessWidget {
     );
   }
 }
-

@@ -28,10 +28,30 @@ class _TeamScreenState extends State<TeamScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   String _role = 'commercial';
+  int? _managerId;
   bool _saving = false;
   Timer? _refreshTimer;
 
   ApiClient get _api => context.read<AuthProvider>().api;
+
+  List<User> get _managers =>
+      (_users ?? []).where((u) => u.role == 'manager').toList();
+
+  Widget _managerDropdown(int? value, ValueChanged<int?> onChanged) {
+    final managers = _managers;
+    final safeValue = managers.any((m) => m.id == value) ? value : null;
+    return DropdownButtonFormField<int?>(
+      initialValue: safeValue,
+      isDense: true,
+      decoration: const InputDecoration(labelText: 'Manager (optionnel)'),
+      items: [
+        const DropdownMenuItem<int?>(value: null, child: Text('Aucun manager')),
+        for (final m in managers)
+          DropdownMenuItem<int?>(value: m.id, child: Text(m.name)),
+      ],
+      onChanged: onChanged,
+    );
+  }
 
   @override
   void initState() {
@@ -66,7 +86,9 @@ class _TeamScreenState extends State<TeamScreen> {
   }
 
   Future<void> _createUser() async {
-    if (_name.text.trim().isEmpty || _email.text.trim().isEmpty || _password.text.isEmpty) {
+    if (_name.text.trim().isEmpty ||
+        _email.text.trim().isEmpty ||
+        _password.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Renseignez tous les champs')),
       );
@@ -79,11 +101,14 @@ class _TeamScreenState extends State<TeamScreen> {
         'email': _email.text.trim(),
         'password': _password.text,
         'role': _role,
+        if (_role == 'commercial') 'manager_id': _managerId,
       });
       final note = switch (res.emailStatus) {
         'sent' => 'Compte créé. Email de bienvenue envoyé à ${res.user.email}.',
-        'error' => 'Compte créé mais l\'email n\'a pas pu être envoyé (erreur SMTP).',
-        _ => 'Compte créé. Email non envoyé : SMTP non configuré sur le serveur.',
+        'error' =>
+          'Compte créé mais l\'email n\'a pas pu être envoyé (erreur SMTP).',
+        _ =>
+          'Compte créé. Email non envoyé : SMTP non configuré sur le serveur.',
       };
       _name.clear();
       _email.clear();
@@ -91,14 +116,19 @@ class _TeamScreenState extends State<TeamScreen> {
       setState(() {
         _expanded = false;
         _role = 'commercial';
+        _managerId = null;
       });
       _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(note)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(note)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -110,6 +140,7 @@ class _TeamScreenState extends State<TeamScreen> {
     final emailC = TextEditingController(text: u.email);
     final passC = TextEditingController();
     String role = u.role;
+    int? managerId = u.manager_id;
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -122,13 +153,19 @@ class _TeamScreenState extends State<TeamScreen> {
                 TextField(
                   controller: nameC,
                   autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Nom', isDense: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Nom',
+                    isDense: true,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: emailC,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Email', isDense: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    isDense: true,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -150,11 +187,21 @@ class _TeamScreenState extends State<TeamScreen> {
                   ],
                   onChanged: (v) => setModalState(() => role = v ?? role),
                 ),
+                if (role == 'commercial') ...[
+                  const SizedBox(height: 8),
+                  _managerDropdown(
+                    managerId,
+                    (v) => setModalState(() => managerId = v),
+                  ),
+                ],
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annuler'),
+            ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(backgroundColor: kPrimary),
@@ -170,17 +217,20 @@ class _TeamScreenState extends State<TeamScreen> {
         'name': nameC.text.trim(),
         'email': emailC.text.trim(),
         'role': role,
+        'manager_id': role == 'commercial' ? managerId : null,
         if (passC.text.isNotEmpty) 'password': passC.text,
       });
       _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Utilisateur mis à jour')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Utilisateur mis à jour')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -190,9 +240,14 @@ class _TeamScreenState extends State<TeamScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Supprimer « ${u.name} » ?'),
-        content: const Text('Le compte sera archivé et l\'utilisateur ne pourra plus se connecter.'),
+        content: const Text(
+          'Le compte sera archivé et l\'utilisateur ne pourra plus se connecter.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -206,13 +261,15 @@ class _TeamScreenState extends State<TeamScreen> {
       await _api.deleteUser(u.id);
       _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Utilisateur supprimé')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Utilisateur supprimé')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -224,19 +281,19 @@ class _TeamScreenState extends State<TeamScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _users == null
-              ? const SkeletonScreen(showStats: false)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(12),
-                    children: [
-                      if (_expanded) _createCard(),
-                      for (final u in _users!) _userCard(u),
-                      const SizedBox(height: 80),
-                    ],
-                  ),
-                ),
+          ? const SkeletonScreen(showStats: false)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(12),
+                children: [
+                  if (_expanded) _createCard(),
+                  for (final u in _users!) _userCard(u),
+                  const SizedBox(height: 80),
+                ],
+              ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => setState(() => _expanded = !_expanded),
         tooltip: 'Ajouter un utilisateur',
@@ -248,7 +305,9 @@ class _TeamScreenState extends State<TeamScreen> {
   Widget _createCard() {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -257,29 +316,39 @@ class _TeamScreenState extends State<TeamScreen> {
               children: [
                 const Icon(Icons.person_add_alt, color: kPrimary),
                 const SizedBox(width: 8),
-                Text('Nouvel utilisateur',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Nouvel utilisateur',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Nom', isDense: true),
+              decoration: const InputDecoration(
+                labelText: 'Nom',
+                isDense: true,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email', isDense: true),
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                isDense: true,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _password,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Mot de passe', isDense: true),
+              decoration: const InputDecoration(
+                labelText: 'Mot de passe',
+                isDense: true,
+              ),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -292,6 +361,13 @@ class _TeamScreenState extends State<TeamScreen> {
               ],
               onChanged: (v) => setState(() => _role = v ?? 'commercial'),
             ),
+            if (_role == 'commercial') ...[
+              const SizedBox(height: 8),
+              _managerDropdown(
+                _managerId,
+                (v) => setState(() => _managerId = v),
+              ),
+            ],
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -312,7 +388,9 @@ class _TeamScreenState extends State<TeamScreen> {
     final stat = _stats?.where((s) => s.id == u.id).firstOrNull;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -326,22 +404,29 @@ class _TeamScreenState extends State<TeamScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(u.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
                       Text(
-                        [kRoleLabels[u.role] ?? u.role, u.email]
-                            .where((s) => s.isNotEmpty)
-                            .join(' • '),
-                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        u.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        [
+                          kRoleLabels[u.role] ?? u.role,
+                          u.email,
+                        ].where((s) => s.isNotEmpty).join(' • '),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                if (u.isAdmin) const Badge(label: 'Admin', color: Colors.deepOrange),
+                if (u.isAdmin)
+                  const Badge(label: 'Admin', color: Colors.deepOrange),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   color: kPrimary,
@@ -377,12 +462,19 @@ class _TeamScreenState extends State<TeamScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          Text(label,
-              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

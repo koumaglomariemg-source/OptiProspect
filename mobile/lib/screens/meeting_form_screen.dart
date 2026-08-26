@@ -8,7 +8,9 @@ import '../services/api_client.dart';
 import '../utils/formatters.dart';
 
 class MeetingFormScreen extends StatefulWidget {
-  const MeetingFormScreen({super.key});
+  final Meeting? meeting;
+
+  const MeetingFormScreen({super.key, this.meeting});
 
   @override
   State<MeetingFormScreen> createState() => _MeetingFormScreenState();
@@ -30,9 +32,29 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
 
   ApiClient get _api => context.read<AuthProvider>().api;
 
+  bool get _isEdit => widget.meeting != null;
+
   @override
   void initState() {
     super.initState();
+    final m = widget.meeting;
+    if (m != null) {
+      _title.text = m.title;
+      _type = m.type;
+      _location.text = m.location ?? '';
+      _link.text = m.meetingLink ?? '';
+      _notes.text = m.notes ?? '';
+      final start = parseIso(m.startsAt);
+      final end = parseIso(m.endsAt);
+      if (start != null) {
+        _date = start;
+        _start = TimeOfDay(hour: start.hour, minute: start.minute);
+      }
+      if (end != null) {
+        _end = TimeOfDay(hour: end.hour, minute: end.minute);
+      }
+      _participants.addAll(m.participants.map((p) => p.id));
+    }
     _loadUsers();
   }
 
@@ -62,11 +84,23 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
       return;
     }
     final start = DateTime(
-        _date.year, _date.month, _date.day, _start.hour, _start.minute);
-    final end =
-        DateTime(_date.year, _date.month, _date.day, _end.hour, _end.minute);
+      _date.year,
+      _date.month,
+      _date.day,
+      _start.hour,
+      _start.minute,
+    );
+    final end = DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      _end.hour,
+      _end.minute,
+    );
     if (!end.isAfter(start)) {
-      setState(() => _error = 'L\'heure de fin doit être après l\'heure de début');
+      setState(
+        () => _error = 'L\'heure de fin doit être après l\'heure de début',
+      );
       return;
     }
     setState(() {
@@ -74,7 +108,7 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
       _error = null;
     });
     try {
-      await _api.createMeeting({
+      final body = {
         'title': _title.text.trim(),
         'type': _type,
         if (_location.text.trim().isNotEmpty) 'location': _location.text.trim(),
@@ -83,7 +117,12 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
         'ends_at': toApiDateTime(end),
         if (_notes.text.trim().isNotEmpty) 'notes': _notes.text.trim(),
         'participants': _participants.toList(),
-      });
+      };
+      if (_isEdit) {
+        await _api.updateMeeting(widget.meeting!.id, body);
+      } else {
+        await _api.createMeeting(body);
+      }
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -95,7 +134,9 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Nouvelle réunion')),
+      appBar: AppBar(
+        title: Text(_isEdit ? 'Modifier la réunion' : 'Nouvelle réunion'),
+      ),
       body: _saving
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -104,8 +145,12 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_error!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ),
                 TextField(
                   controller: _title,
@@ -170,8 +215,10 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                       labelText: 'Date',
                       prefixIcon: Icon(Icons.calendar_today),
                     ),
-                    child: Text(toApiDate(_date),
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      toApiDate(_date),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -181,7 +228,9 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                       child: InkWell(
                         onTap: () async {
                           final picked = await showTimePicker(
-                              context: context, initialTime: _start);
+                            context: context,
+                            initialTime: _start,
+                          );
                           if (picked != null) setState(() => _start = picked);
                         },
                         child: InputDecorator(
@@ -189,8 +238,10 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                             labelText: 'Début',
                             prefixIcon: Icon(Icons.access_time),
                           ),
-                          child: Text(_start.format(context),
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          child: Text(
+                            _start.format(context),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ),
@@ -199,7 +250,9 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                       child: InkWell(
                         onTap: () async {
                           final picked = await showTimePicker(
-                              context: context, initialTime: _end);
+                            context: context,
+                            initialTime: _end,
+                          );
                           if (picked != null) setState(() => _end = picked);
                         },
                         child: InputDecorator(
@@ -207,19 +260,22 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                             labelText: 'Fin',
                             prefixIcon: Icon(Icons.access_time),
                           ),
-                          child: Text(_end.format(context),
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          child: Text(
+                            _end.format(context),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                Text('Participants',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Participants',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 if (_users == null)
                   const Center(
@@ -239,8 +295,16 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                           _participants.remove(u.id);
                         }
                       }),
-                      title: Text(u.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      subtitle: Text(u.role, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      title: Text(
+                        u.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        u.role,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -252,7 +316,11 @@ class _MeetingFormScreenState extends State<MeetingFormScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   icon: const Icon(Icons.event_available),
-                  label: const Text('Créer la réunion'),
+                  label: Text(
+                    _isEdit
+                        ? 'Enregistrer les modifications'
+                        : 'Créer la réunion',
+                  ),
                 ),
                 const SizedBox(height: 24),
               ],

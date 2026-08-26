@@ -93,7 +93,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       helpText: 'Sélectionner le mois',
     );
     if (picked == null) return;
-    setState(() => _yearMonth = '${picked.year}-${picked.month.toString().padLeft(2, '0')}');
+    setState(
+      () => _yearMonth =
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}',
+    );
     _load();
   }
 
@@ -106,85 +109,100 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _overview == null
-              ? const SkeletonScreen()
-              : DefaultTabController(
-                  length: 3,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
-                        child: _heroSection(user),
-                      ),
-                      TabBar(
-                        labelColor: kPrimary,
-                        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                        indicatorColor: kPrimary,
-                        dividerColor: Theme.of(context).dividerColor,
-                        tabs: const [
-                          Tab(text: 'Aperçu'),
-                          Tab(text: 'Graphiques'),
-                          Tab(text: 'Équipe'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _tabView([
-                              if (showUserFilter) ...[
-                                _filtersSection(),
-                                const SizedBox(height: AppSpacing.lg),
-                              ],
-                              _kpisSection(),
-                              const SizedBox(height: AppSpacing.lg),
-                              _forecastSection(),
-                              const SizedBox(height: AppSpacing.lg),
-                              _nextActionsSection(),
-                              const SizedBox(height: AppSpacing.lg),
-                              if (!isAdmin) _atRiskSection(),
-                            ]),
-                            _tabView([
-                              TimelineChart(
-                                title: 'Nouveaux prospects ($_days j)',
-                                data: [for (final t in _timeline ?? const <TimelinePoint>[]) (t.day, t.n)],
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              BarChartWidget(
-                                title: 'Prospects par étape',
-                                data: [
-                                  for (final s in _overview!.byStage) (kStageLabels[s.key] ?? s.key, s.n)
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              BarChartWidget(
-                                title: 'Prospects par source',
-                                data: [
-                                  for (final s in _overview!.bySource) (kSourceLabels[s.key] ?? s.key, s.n)
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              BarChartWidget(
-                                title: 'Prospects par zone',
-                                data: [for (final z in _overview!.byZone) (z.key, z.n)],
-                                color: kAccent,
-                              ),
-                            ]),
-                            _tabView([
-                              _progressSection(),
-                              const SizedBox(height: AppSpacing.lg),
-                              _teamPerformanceSection(),
-                              const SizedBox(height: AppSpacing.lg),
-                              if (showUserFilter) _agingSection(),
-                              if (isAdmin) ...[
-                                const SizedBox(height: AppSpacing.lg),
-                                _adminGlobalStatsSection(),
-                              ],
-                            ]),
-                          ],
-                        ),
-                      ),
+          ? const SkeletonScreen()
+          : DefaultTabController(
+              length: 3,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                    ),
+                    child: _heroSection(user),
+                  ),
+                  TabBar(
+                    labelColor: kPrimary,
+                    unselectedLabelColor: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant,
+                    indicatorColor: kPrimary,
+                    dividerColor: Theme.of(context).dividerColor,
+                    tabs: const [
+                      Tab(text: 'Aperçu'),
+                      Tab(text: 'Graphiques'),
+                      Tab(text: 'Équipe'),
                     ],
                   ),
-                ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _tabView([
+                          if (showUserFilter) ...[
+                            _filtersSection(),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                          _kpisSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _forecastSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _nextActionsSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          if (!isAdmin) _atRiskSection(),
+                        ]),
+                        _tabView([
+                          TimelineChart(
+                            title: 'Nouveaux prospects ($_days j)',
+                            data: [
+                              for (final t
+                                  in _timeline ?? const <TimelinePoint>[])
+                                (t.day, t.n),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          BarChartWidget(
+                            title: 'Prospects par étape',
+                            data: [
+                              for (final s in _overview!.byStage)
+                                (kStageLabels[s.key] ?? s.key, s.n),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          BarChartWidget(
+                            title: 'Prospects par source',
+                            data: [
+                              for (final s in _overview!.bySource)
+                                (kSourceLabels[s.key] ?? s.key, s.n),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          BarChartWidget(
+                            title: 'Prospects par zone',
+                            data: [
+                              for (final z in _overview!.byZone) (z.key, z.n),
+                            ],
+                            color: kAccent,
+                          ),
+                        ]),
+                        _tabView([
+                          _progressSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _teamPerformanceSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          if (showUserFilter) _agingSection(),
+                          if (isAdmin) ...[
+                            const SizedBox(height: AppSpacing.lg),
+                            _adminGlobalStatsSection(),
+                          ],
+                        ]),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -193,10 +211,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl),
-        children: [
-          for (final c in children) c,
-        ],
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.xl,
+        ),
+        children: [for (final c in children) c],
       ),
     );
   }
@@ -206,7 +227,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final day = DateFormat('EEEE d MMMM', 'fr_FR').format(now);
     final first = user?.name.split(' ').first ?? '';
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [kPrimaryDark, kPrimary, kAccent],
@@ -235,21 +259,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   day[0].toUpperCase() + day.substring(1),
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3),
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.auto_graph, size: 44, color: Colors.white.withValues(alpha: 0.25)),
+          Icon(
+            Icons.auto_graph,
+            size: 44,
+            color: Colors.white.withValues(alpha: 0.25),
+          ),
         ],
       ),
     );
@@ -262,13 +295,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           DropdownButtonFormField<String?>(
             initialValue: _selectedUserId,
-            decoration: const InputDecoration(labelText: 'Commercial', isDense: true),
+            decoration: const InputDecoration(
+              labelText: 'Commercial',
+              isDense: true,
+            ),
             items: [
               const DropdownMenuItem(value: null, child: Text('Tous')),
               for (final u in _users ?? const <User>[])
                 DropdownMenuItem(
                   value: u.id.toString(),
-                  child: Text(u.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    u.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
             ],
             onChanged: (v) {
@@ -282,7 +322,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   initialValue: _days,
-                  decoration: const InputDecoration(labelText: 'Période', isDense: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Période',
+                    isDense: true,
+                  ),
                   items: const [
                     DropdownMenuItem(value: 7, child: Text('7 jours')),
                     DropdownMenuItem(value: 30, child: Text('30 jours')),
@@ -299,9 +342,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: InkWell(
                   onTap: _pickMonth,
                   child: InputDecorator(
-                    decoration: const InputDecoration(labelText: 'Mois', isDense: true),
-                    child: Text(_yearMonth,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    decoration: const InputDecoration(
+                      labelText: 'Mois',
+                      isDense: true,
+                    ),
+                    child: Text(
+                      _yearMonth,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -324,7 +375,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 620 ? 4 : 2;
         final gap = AppSpacing.md;
-        final cardWidth = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        final cardWidth =
+            (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
           spacing: gap,
           runSpacing: gap,
@@ -332,7 +384,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             for (final k in kpis)
               SizedBox(
                 width: cardWidth,
-                child: KpiCard(label: k.$1, value: k.$2, icon: k.$3, color: k.$4),
+                child: KpiCard(
+                  label: k.$1,
+                  value: k.$2,
+                  icon: k.$3,
+                  color: k.$4,
+                ),
               ),
           ],
         );
@@ -346,20 +403,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
       title: 'Prévisions',
       child: Column(
         children: [
-          InfoRow(icon: Icons.payments_outlined, label: 'Pipeline pondéré', value: money(f.weightedPipeline)),
-          InfoRow(icon: Icons.insights, label: 'Attendu 30 jours', value: money(f.expectedNext30)),
+          InfoRow(
+            icon: Icons.payments_outlined,
+            label: 'Pipeline pondéré',
+            value: money(f.weightedPipeline),
+          ),
+          InfoRow(
+            icon: Icons.insights,
+            label: 'Attendu 30 jours',
+            value: money(f.expectedNext30),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              _miniStat('Taux de victoire', '${f.winRate.toStringAsFixed(0)}%', Colors.green),
+              _miniStat(
+                'Taux de victoire',
+                '${f.winRate.toStringAsFixed(0)}%',
+                Colors.green,
+              ),
               const SizedBox(width: AppSpacing.md),
-              _miniStat('Conversions 30j', '${f.expectedConversions30}', kPrimary),
+              _miniStat(
+                'Conversions 30j',
+                '${f.expectedConversions30}',
+                kPrimary,
+              ),
               const SizedBox(width: AppSpacing.md),
               _miniStat('Panier moyen', money(f.avgDealValue), kAccent),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          InfoRow(icon: Icons.speed, label: 'Prospects / jour', value: f.prospectsPerDay.toStringAsFixed(1)),
+          InfoRow(
+            icon: Icons.speed,
+            label: 'Prospects / jour',
+            value: f.prospectsPerDay.toStringAsFixed(1),
+          ),
         ],
       ),
     );
@@ -371,21 +448,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: color.withValues(alpha: 0.07),
         margin: const EdgeInsets.only(top: AppSpacing.sm),
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.md),
           child: Column(
             children: [
-              Text(value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: color)),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: color,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
@@ -396,7 +486,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _progressSection() {
     final targets = _targets;
     final user = context.watch<AuthProvider>().user;
-    if (targets == null || targets.users.isEmpty) return const SizedBox.shrink();
+    if (targets == null || targets.users.isEmpty)
+      return const SizedBox.shrink();
     return SectionCard(
       title: 'Objectifs ${targets.yearMonth}',
       child: Column(
@@ -410,10 +501,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(u.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        Text(
+                          u.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
@@ -421,7 +517,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: u.pct / 100,
                             minHeight: 8,
                             color: u.pct >= 100 ? Colors.green : kPrimary,
-                            backgroundColor: Colors.grey.withValues(alpha: 0.15),
+                            backgroundColor: Colors.grey.withValues(
+                              alpha: 0.15,
+                            ),
                           ),
                         ),
                       ],
@@ -431,10 +529,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(money(u.achieved),
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                      Text('${money(u.targetValue)} — ${u.pct.toStringAsFixed(0)}%',
-                          style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      Text(
+                        money(u.achieved),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${money(u.targetValue)} — ${u.pct.toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                   if (user?.isManager == true)
@@ -453,7 +561,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _editTarget(TargetUser u) async {
     final controller = TextEditingController(
-        text: u.targetValue == 0 ? '' : u.targetValue.toStringAsFixed(0));
+      text: u.targetValue == 0 ? '' : u.targetValue.toStringAsFixed(0),
+    );
     final int? result = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -464,24 +573,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
           decoration: const InputDecoration(labelText: 'Objectif (FCFA)'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, -1), child: const Text('Supprimer')),
-          TextButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, -1),
+            child: const Text('Supprimer'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
-            onPressed: () =>
-                Navigator.pop(ctx, int.tryParse(controller.text.replaceAll(',', '.')) ?? 0),
+            onPressed: () => Navigator.pop(
+              ctx,
+              int.tryParse(controller.text.replaceAll(',', '.')) ?? 0,
+            ),
             child: const Text('Enregistrer'),
           ),
         ],
       ),
     );
     if (result == null) return;
-    final value = result < 0 ? 0 : result;
     try {
-      await _api.setTarget(u.id, _yearMonth, value.toDouble());
+      if (result < 0) {
+        await _api.deleteTarget(u.id, _yearMonth);
+      } else {
+        await _api.setTarget(u.id, _yearMonth, result.toDouble());
+      }
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -504,14 +626,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Avatar(name: u.name, radius: 18),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
-                        child: Text(u.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        child: Text(
+                          u.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: AppSpacing.md),
-                      Text('${u.converted}/${u.total}✓',
-                          style: const TextStyle(fontSize: 12.5, color: Colors.green, fontWeight: FontWeight.w600)),
+                      Text(
+                        '${u.converted}/${u.total}✓',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -520,10 +653,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     runSpacing: AppSpacing.sm,
                     children: [
                       _miniChip('Pipeline', money(u.openValue), kPrimary),
-                      _miniChip('Relances', '${u.relancesLate} en retard', Colors.red),
+                      _miniChip(
+                        'Relances',
+                        '${u.relancesLate} en retard',
+                        Colors.red,
+                      ),
                       _miniChip('Appels', '${u.calls}', kAccent),
                       _miniChip('RDV', '${u.meetingsCount}', kAccent2),
-                      _miniChip('Cycle', '${u.avgCycleDays} j', Colors.blueGrey),
+                      _miniChip(
+                        'Cycle',
+                        '${u.avgCycleDays} j',
+                        Colors.blueGrey,
+                      ),
                     ],
                   ),
                 ],
@@ -543,7 +684,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Text(
         '$label : $value',
-        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: color),
+        style: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }
@@ -572,13 +717,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.trending_down, color: Colors.red, size: 20),
+                  child: const Icon(
+                    Icons.trending_down,
+                    color: Colors.red,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   '${r.name}${r.company != null && r.company!.isNotEmpty ? ' · ${r.company}' : ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -588,8 +740,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Badge(label: r.reasonLabel, color: Colors.red),
-                      Badge(label: '${r.days} j', color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      if (r.value > 0) Badge(label: money(r.value), color: kPrimary),
+                      Badge(
+                        label: '${r.days} j',
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      if (r.value > 0)
+                        Badge(label: money(r.value), color: kPrimary),
                     ],
                   ),
                 ),
@@ -598,13 +754,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     final p = await _api.prospect(r.id);
                     if (!mounted) return;
                     await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => ProspectDetailScreen(prospect: p)),
+                      MaterialPageRoute(
+                        builder: (_) => ProspectDetailScreen(prospect: p),
+                      ),
                     );
                     _load();
                   } catch (e) {
                     if (mounted) {
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(SnackBar(content: Text(e.toString())));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                   }
                 },
@@ -626,11 +785,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: EdgeInsets.only(bottom: AppSpacing.sm),
             child: Row(
               children: [
-                Text('Ancienneté moyenne',
-                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(
+                  'Ancienneté moyenne',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const Spacer(),
-                Text('${aging.avgAgeDays} jours',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.orange)),
+                Text(
+                  '${aging.avgAgeDays} jours',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.orange,
+                  ),
+                ),
               ],
             ),
           ),
@@ -643,23 +813,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(b.label,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
-                      Text('${b.n} · ${money(b.value)}',
-                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      Text(
+                        b.label,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      Text(
+                        '${b.n} · ${money(b.value)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
-                      value: aging.total == 0 ? 0 : (b.n / aging.total).clamp(0.0, 1.0),
+                      value: aging.total == 0
+                          ? 0
+                          : (b.n / aging.total).clamp(0.0, 1.0),
                       minHeight: 8,
                       color: b.key == '90_plus'
                           ? Colors.red
                           : b.key == '31_90'
-                              ? Colors.orange
-                              : Colors.green,
+                          ? Colors.orange
+                          : Colors.green,
                       backgroundColor: Colors.grey.withValues(alpha: 0.15),
                     ),
                   ),
@@ -682,10 +864,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Card(
               margin: EdgeInsets.only(bottom: AppSpacing.sm),
               elevation: 0,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              ),
               child: ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
                 leading: Container(
                   width: 40,
                   height: 40,
@@ -695,23 +884,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   child: const Icon(Icons.event, color: kPrimary, size: 20),
                 ),
-                title: Text(na.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                title: Text(
+                  na.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    [na.nextAction ?? '', formatIsoDateTime(na.nextActionDate)]
-                        .where((s) => s.isNotEmpty && s != '—')
-                        .join(' • '),
+                    [
+                      na.nextAction ?? '',
+                      formatIsoDateTime(na.nextActionDate),
+                    ].where((s) => s.isNotEmpty && s != '—').join(' • '),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
+                  icon: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                    size: 22,
+                  ),
                   tooltip: 'Relance effectuée',
                   onPressed: () async {
                     try {
@@ -719,8 +921,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _load();
                     } catch (e) {
                       if (mounted) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text(e.toString())));
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(e.toString())));
                       }
                     }
                   },
@@ -730,13 +933,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     final p = await _api.prospect(na.id);
                     if (!mounted) return;
                     await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => ProspectDetailScreen(prospect: p)),
+                      MaterialPageRoute(
+                        builder: (_) => ProspectDetailScreen(prospect: p),
+                      ),
                     );
                     _load();
                   } catch (e) {
                     if (mounted) {
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(SnackBar(content: Text(e.toString())));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                   }
                 },
@@ -758,18 +964,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Expanded(
-                child: _adminStatCard('Équipe', '${_users?.length ?? 0}', Icons.people_outline, kPrimary),
+                child: _adminStatCard(
+                  'Équipe',
+                  '${_users?.length ?? 0}',
+                  Icons.people_outline,
+                  kPrimary,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: _adminStatCard('Pipeline total', money(overview.byStage.fold(0, (sum, s) => sum + s.n * 100000)), Icons.attach_money, kAccent),
+                child: _adminStatCard(
+                  'Pipeline total',
+                  money(
+                    overview.byStage.fold(0, (sum, s) => sum + s.n * 100000),
+                  ),
+                  Icons.attach_money,
+                  kAccent,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           if (targets != null && targets.users.isNotEmpty) ...[
-            Text('Objectifs ${targets.yearMonth}',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+            Text(
+              'Objectifs ${targets.yearMonth}',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
             const SizedBox(height: AppSpacing.sm),
             for (final u in targets.users)
               Padding(
@@ -780,10 +1000,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(u.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          Text(
+                            u.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4),
@@ -791,18 +1016,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               value: u.pct / 100,
                               minHeight: 6,
                               color: u.pct >= 100 ? Colors.green : kPrimary,
-                              backgroundColor: Colors.grey.withValues(alpha: 0.15),
+                              backgroundColor: Colors.grey.withValues(
+                                alpha: 0.15,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
-                    Text('${u.pct.toStringAsFixed(0)}%',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: u.pct >= 100 ? Colors.green : kPrimary)),
+                    Text(
+                      '${u.pct.toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: u.pct >= 100 ? Colors.green : kPrimary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -810,8 +1040,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: AppSpacing.md),
           if (byUser.isNotEmpty) ...[
             const Divider(),
-            const Text('Activité par commercial',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+            const Text(
+              'Activité par commercial',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
             const SizedBox(height: AppSpacing.sm),
             for (final u in byUser)
               Padding(
@@ -824,17 +1056,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(u.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                          Text('${u.converted}/${u.total} convertis · ${u.calls} appels · ${u.meetingsCount} RDV',
-                              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                          Text(
+                            u.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            '${u.converted}/${u.total} convertis · ${u.calls} appels · ${u.meetingsCount} RDV',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    Text(money(u.openValue),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: kPrimary)),
+                    Text(
+                      money(u.openValue),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: kPrimary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -844,11 +1094,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _adminStatCard(String label, String value, IconData icon, Color color) {
+  Widget _adminStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       color: color.withValues(alpha: 0.07),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -858,18 +1115,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Icon(icon, color: color, size: 20),
                 const SizedBox(width: 8),
-                Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: color)),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                color: color,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-
-  }
+}

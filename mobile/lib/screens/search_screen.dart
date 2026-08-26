@@ -5,9 +5,11 @@ import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
+import '../services/export_service.dart';
 import '../utils/constants.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/export_menu.dart';
 import '../widgets/skeleton.dart';
 import 'prospect_detail_screen.dart';
 
@@ -33,6 +35,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool? _contratSigne;
 
   List<Prospect>? _prospects;
+  List<User>? _users;
   int _total = 0;
   int _page = 1;
   int _perPage = 25;
@@ -45,6 +48,16 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _load();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    final user = context.read<AuthProvider>().user;
+    if (user == null || user.role == 'commercial') return;
+    try {
+      final users = await _api.users();
+      if (mounted) setState(() => _users = users);
+    } catch (_) {}
   }
 
   bool get _contratSigneTab => _tab == 1;
@@ -111,88 +124,139 @@ class _SearchScreenState extends State<SearchScreen> {
 
   int get _totalPages => (_total / _perPage).ceil();
 
+  /// Récupère l'ensemble des lignes correspondant aux filtres (toutes pages)
+  /// pour l'export, en contournant la pagination d'affichage.
+  Future<List<Prospect>> _fetchAllForExport() async {
+    final all = <Prospect>[];
+    var page = 1;
+    const limit = 500;
+    while (true) {
+      final (rows, total) = await _api.prospects(
+        search: _search,
+        stage: _stage,
+        source: _source,
+        assignedToId: int.tryParse(_assignedToId ?? ''),
+        dateFrom: _dateFrom != null ? toApiDate(_dateFrom!) : null,
+        dateTo: _dateTo != null ? toApiDate(_dateTo!) : null,
+        nextActionFrom: _rdvFrom != null ? toApiDate(_rdvFrom!) : null,
+        nextActionTo: _rdvTo != null ? toApiDate(_rdvTo!) : null,
+        contratDepose: _contratDepose,
+        optionFraisScolaire: _optionFraisScolaire,
+        contratSigne: _contratSigneTab ? true : _contratSigne,
+        page: page,
+        limit: limit,
+      );
+      all.addAll(rows);
+      final t = total ?? all.length;
+      if (rows.isEmpty || all.length >= t || rows.length < limit) break;
+      page++;
+      if (page > 200) break; // garde-fou
+    }
+    return all;
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Recherche'),
-        actions: [
-          IconButton(
-            tooltip: 'Réinitialiser',
-            onPressed: _reset,
-            icon: const Icon(Icons.filter_alt_off_outlined),
+        appBar: AppBar(
+          title: const Text('Recherche'),
+          actions: [
+            ProspectExportButton(
+              columns: kRechercheExportColumns,
+              getRows: _fetchAllForExport,
+              baseName:
+                  'optiprospect-recherche-${_tab == 0 ? 'prospects' : 'contrats'}',
+              sheetTitle:
+                  'Recherche — ${_tab == 0 ? 'Prospects' : 'Contrats signés'}',
+              enabled: _total > 0,
+            ),
+            IconButton(
+              tooltip: 'Réinitialiser',
+              onPressed: _reset,
+              icon: const Icon(Icons.filter_alt_off_outlined),
+            ),
+            IconButton(
+              tooltip: 'Filtres',
+              onPressed: () => setState(() => _showFilters = !_showFilters),
+              icon: Icon(
+                _showFilters ? Icons.filter_alt : Icons.filter_alt_outlined,
+              ),
+            ),
+          ],
+          bottom: TabBar(
+            tabs: const [
+              Tab(text: 'Prospects'),
+              Tab(text: 'Contrats signés'),
+            ],
+            onTap: (i) {
+              setState(() {
+                _tab = i;
+                _page = 1;
+              });
+              _load();
+            },
           ),
-          IconButton(
-            tooltip: 'Filtres',
-            onPressed: () => setState(() => _showFilters = !_showFilters),
-            icon: Icon(_showFilters ? Icons.filter_alt : Icons.filter_alt_outlined),
-          ),
-        ],
-        bottom: TabBar(
-          tabs: const [Tab(text: 'Prospects'), Tab(text: 'Contrats signés')],
-          onTap: (i) {
-            setState(() {
-              _tab = i;
-              _page = 1;
-            });
-            _load();
-          },
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: TextField(
+                decoration: const InputDecoration(
+                  hintText: 'Nom, société, email, tél, quartier…',
+                  prefixIcon: Icon(Icons.search),
+                  isDense: true,
+                ),
+                onChanged: (v) {
+                  _search = v.trim();
+                  _page = 1;
+                  _load();
+                },
+              ),
+            ),
+            if (_showFilters) _filtersPanel(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                children: [
+                  Text(
+                    '$_total prospect(s)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (_hasActiveFilters) ...[
+                    const SizedBox(width: 8),
+                    const Badge(label: 'Filtres actifs', color: kPrimary),
+                  ],
+                ],
+              ),
+            ),
+            Expanded(
+              child: _error != null
+                  ? ErrorRetry(message: _error!, onRetry: _load)
+                  : _prospects == null
+                  ? const SkeletonScreen(showStats: false)
+                  : _prospects!.isEmpty
+                  ? const EmptyState(message: 'Aucun prospect trouvé')
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        itemCount: _prospects!.length,
+                        itemBuilder: (context, i) =>
+                            _resultTile(_prospects![i]),
+                      ),
+                    ),
+            ),
+            if (_totalPages > 1) _paginationBar(),
+          ],
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Nom, société, email, tél, quartier…',
-                prefixIcon: Icon(Icons.search),
-                isDense: true,
-              ),
-              onChanged: (v) {
-                _search = v.trim();
-                _page = 1;
-                _load();
-              },
-            ),
-          ),
-          if (_showFilters) _filtersPanel(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(
-              children: [
-                Text('$_total prospect(s)',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                if (_hasActiveFilters) ...[
-                  const SizedBox(width: 8),
-                  const Badge(label: 'Filtres actifs', color: kPrimary),
-                ],
-              ],
-            ),
-          ),
-          Expanded(
-            child: _error != null
-                ? ErrorRetry(message: _error!, onRetry: _load)
-                : _prospects == null
-                    ? const SkeletonScreen(showStats: false)
-                    : _prospects!.isEmpty
-                        ? const EmptyState(message: 'Aucun prospect trouvé')
-                        : RefreshIndicator(
-                            onRefresh: _load,
-                            child: ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              itemCount: _prospects!.length,
-                              itemBuilder: (context, i) => _resultTile(_prospects![i]),
-                            ),
-                          ),
-          ),
-          if (_totalPages > 1) _paginationBar(),
-        ],
-      ),
-    ),
     );
   }
 
@@ -206,6 +270,10 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             _stageSourceRow(),
             const SizedBox(height: 8),
+            if (_users != null) ...[
+              _commercialRow(),
+              const SizedBox(height: 8),
+            ],
             _dateRow(),
             const SizedBox(height: 8),
             _rdvRow(),
@@ -259,6 +327,29 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _commercialRow() {
+    final commerciaux = (_users ?? [])
+        .where((u) => u.role == 'commercial')
+        .toList();
+    final current = int.tryParse(_assignedToId ?? '');
+    final safe = commerciaux.any((u) => u.id == current) ? current : null;
+    return DropdownButtonFormField<int?>(
+      initialValue: safe,
+      isDense: true,
+      decoration: const InputDecoration(labelText: 'Commercial'),
+      items: [
+        const DropdownMenuItem<int?>(value: null, child: Text('Tous')),
+        for (final u in commerciaux)
+          DropdownMenuItem<int?>(value: u.id, child: Text(u.name)),
+      ],
+      onChanged: (v) {
+        _assignedToId = v?.toString();
+        _page = 1;
+        _load();
+      },
+    );
+  }
+
   Widget _dateRow() {
     return Row(
       children: [
@@ -266,9 +357,14 @@ class _SearchScreenState extends State<SearchScreen> {
           child: InkWell(
             onTap: () => _pickDate((d) => _dateFrom = d),
             child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'Prospection du', isDense: true),
-              child: Text(_dateFrom == null ? '—' : toApiDate(_dateFrom!),
-                  style: const TextStyle(fontSize: 13)),
+              decoration: const InputDecoration(
+                labelText: 'Prospection du',
+                isDense: true,
+              ),
+              child: Text(
+                _dateFrom == null ? '—' : toApiDate(_dateFrom!),
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ),
         ),
@@ -278,8 +374,10 @@ class _SearchScreenState extends State<SearchScreen> {
             onTap: () => _pickDate((d) => _dateTo = d),
             child: InputDecorator(
               decoration: const InputDecoration(labelText: 'au', isDense: true),
-              child: Text(_dateTo == null ? '—' : toApiDate(_dateTo!),
-                  style: const TextStyle(fontSize: 13)),
+              child: Text(
+                _dateTo == null ? '—' : toApiDate(_dateTo!),
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ),
         ),
@@ -294,9 +392,14 @@ class _SearchScreenState extends State<SearchScreen> {
           child: InkWell(
             onTap: () => _pickDate((d) => _rdvFrom = d),
             child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'RDV à partir du', isDense: true),
-              child: Text(_rdvFrom == null ? '—' : toApiDate(_rdvFrom!),
-                  style: const TextStyle(fontSize: 13)),
+              decoration: const InputDecoration(
+                labelText: 'RDV à partir du',
+                isDense: true,
+              ),
+              child: Text(
+                _rdvFrom == null ? '—' : toApiDate(_rdvFrom!),
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ),
         ),
@@ -305,9 +408,14 @@ class _SearchScreenState extends State<SearchScreen> {
           child: InkWell(
             onTap: () => _pickDate((d) => _rdvTo = d),
             child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'jusqu\'au', isDense: true),
-              child: Text(_rdvTo == null ? '—' : toApiDate(_rdvTo!),
-                  style: const TextStyle(fontSize: 13)),
+              decoration: const InputDecoration(
+                labelText: 'jusqu\'au',
+                isDense: true,
+              ),
+              child: Text(
+                _rdvTo == null ? '—' : toApiDate(_rdvTo!),
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ),
         ),
@@ -347,7 +455,11 @@ class _SearchScreenState extends State<SearchScreen> {
       children: [
         chip('Contrat déposé', _contratDepose, (v) => _contratDepose = v),
         const SizedBox(width: 8),
-        chip('Frais scolaire', _optionFraisScolaire, (v) => _optionFraisScolaire = v),
+        chip(
+          'Frais scolaire',
+          _optionFraisScolaire,
+          (v) => _optionFraisScolaire = v,
+        ),
         if (!_contratSigneTab) ...[
           const SizedBox(width: 8),
           chip('Contrat signé', _contratSigne, (v) => _contratSigne = v),
@@ -359,14 +471,18 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _resultTile(Prospect p) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () async {
           final fresh = await _api.prospect(p.id);
           if (!mounted) return;
           await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ProspectDetailScreen(prospect: fresh)),
+            MaterialPageRoute(
+              builder: (_) => ProspectDetailScreen(prospect: fresh),
+            ),
           );
           _load();
         },
@@ -377,8 +493,14 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               CircleAvatar(
                 backgroundColor: kPrimary.withValues(alpha: 0.15),
-                child: Text(initials(p.name),
-                    style: const TextStyle(color: kPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text(
+                  initials(p.name),
+                  style: const TextStyle(
+                    color: kPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -387,12 +509,17 @@ class _SearchScreenState extends State<SearchScreen> {
                   children: [
                     Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                     Text(
-                      [p.company ?? '', p.quartier ?? '', p.numero ?? '']
-                          .where((s) => s.isNotEmpty)
-                          .join(' • '),
+                      [
+                        p.company ?? '',
+                        p.quartier ?? '',
+                        p.numero ?? '',
+                      ].where((s) => s.isNotEmpty).join(' • '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -407,7 +534,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (p.contratDepose) const Badge(label: 'déposé', color: kPrimary),
+                        if (p.contratDepose)
+                          const Badge(label: 'déposé', color: kPrimary),
                         if (p.contratSigne) ...[
                           const SizedBox(width: 4),
                           const Badge(label: 'signé', color: Colors.green),

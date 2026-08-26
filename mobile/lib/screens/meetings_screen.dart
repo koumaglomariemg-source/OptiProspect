@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_theme.dart';
 import '../models/models.dart';
@@ -40,13 +41,35 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     }
   }
 
+  Future<void> _openLink(String url) async {
+    final uri = Uri.tryParse(url.startsWith('http') ? url : 'https://$url');
+    if (uri == null) return;
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir le lien')),
+        );
+      }
+    }
+  }
+
+  Future<void> _edit(Meeting m) async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => MeetingFormScreen(meeting: m)),
+    );
+    if (updated == true) _load();
+  }
+
   Future<void> _delete(Meeting m) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Supprimer cette réunion ?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -61,7 +84,9 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -69,7 +94,8 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final isManager = auth.user?.isManager == true || auth.user?.isAdmin == true;
+    final isManager =
+        auth.user?.isManager == true || auth.user?.isAdmin == true;
 
     return Scaffold(
       appBar: AppBar(
@@ -93,18 +119,19 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _meetings == null
-              ? const SkeletonScreen(showStats: false)
-              : _meetings!.isEmpty
-                  ? const EmptyState(message: 'Aucune réunion')
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _meetings!.length,
-                        itemBuilder: (context, i) => _meetingCard(_meetings![i], isManager),
-                      ),
-                    ),
+          ? const SkeletonScreen(showStats: false)
+          : _meetings!.isEmpty
+          ? const EmptyState(message: 'Aucune réunion')
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(12),
+                itemCount: _meetings!.length,
+                itemBuilder: (context, i) =>
+                    _meetingCard(_meetings![i], isManager),
+              ),
+            ),
       floatingActionButton: isManager
           ? FloatingActionButton(
               onPressed: () async {
@@ -139,14 +166,18 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     final start = parseIso(m.startsAt);
     final isOnline = m.type == 'en_ligne';
     final color = isOnline ? kPrimary : kAccent;
-    final dayStr = start == null ? '—' : '${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}';
+    final dayStr = start == null
+        ? '—'
+        : '${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}';
     final timeStr = start == null
         ? 'Date à définir'
         : '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -156,11 +187,21 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               children: [
                 Column(
                   children: [
-                    Text(dayStr,
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                    Text('${start?.day ?? ''}',
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold, color: kPrimary)),
+                    Text(
+                      dayStr,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      '${start?.day ?? ''}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimary,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(width: 12),
@@ -168,22 +209,47 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(m.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
                       Text(
-                        [timeStr, m.location ?? ''].where((s) => s.isNotEmpty).join(' • '),
-                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        m.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        [
+                          timeStr,
+                          m.location ?? '',
+                        ].where((s) => s.isNotEmpty).join(' • '),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Badge(label: isOnline ? 'En ligne' : 'Présentiel', color: color),
+                Badge(
+                  label: isOnline ? 'En ligne' : 'Présentiel',
+                  color: color,
+                ),
                 if (isManager) ...[
                   const SizedBox(width: 4),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: kPrimary,
+                    ),
+                    tooltip: 'Modifier',
+                    onPressed: () => _edit(m),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: Colors.red,
+                    ),
+                    tooltip: 'Supprimer',
                     onPressed: () => _delete(m),
                   ),
                 ],
@@ -191,17 +257,30 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
             ),
             if (m.meetingLink != null && m.meetingLink!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.videocam_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(m.meetingLink!,
+              InkWell(
+                onTap: () => _openLink(m.meetingLink!),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.videocam_outlined,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        m.meetingLink!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: Colors.blue)),
-                  ),
-                ],
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
             if (m.notes != null && m.notes!.isNotEmpty) ...[
@@ -212,14 +291,21 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.group_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.group_outlined,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       m.participants.map((p) => p.name).join(', '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -227,8 +313,13 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
             ],
             if (m.createdByName != null) ...[
               const SizedBox(height: 4),
-              Text('Créée par : ${m.createdByName}',
-                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              Text(
+                'Créée par : ${m.createdByName}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ],
         ),

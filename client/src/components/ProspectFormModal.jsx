@@ -28,8 +28,8 @@ export default function ProspectFormModal({ prospect, onClose, onSaved }) {
   const firstGeocode = useRef(
     Boolean(
       prospect &&
-        (Number.parseFloat(prospect.latitude) ||
-          Number.parseFloat(prospect.longitude)),
+      (Number.parseFloat(prospect.latitude) ||
+        Number.parseFloat(prospect.longitude)),
     ),
   );
   const [error, setError] = useState("");
@@ -51,9 +51,7 @@ export default function ProspectFormModal({ prospect, onClose, onSaved }) {
     longitude: prospect?.longitude || "",
     assigned_to: prospect?.assigned_to || "",
     next_action: prospect?.next_action || "",
-    next_action_date:
-      prospect?.next_action_date ||
-      (prospect ? "" : nowStr()),
+    next_action_date: prospect?.next_action_date || (prospect ? "" : nowStr()),
     note: prospect?.note || "",
     template_id: prospect?.template_id || "",
     numero: prospect?.numero || "",
@@ -63,10 +61,12 @@ export default function ProspectFormModal({ prospect, onClose, onSaved }) {
   });
 
   useEffect(() => {
-    api
-      .users()
-      .then((rows) => setUsers(rows.filter((u) => u.role === "commercial")))
-      .catch(() => {});
+    if (currentUser?.role !== "commercial") {
+      api
+        .users()
+        .then((rows) => setUsers(rows.filter((u) => u.role === "commercial")))
+        .catch(() => {});
+    }
     api
       .settings()
       .then((s) => {
@@ -118,8 +118,7 @@ export default function ProspectFormModal({ prospect, onClose, onSaved }) {
         const data = await res.json();
         const a = data?.address || {};
         const voie = [a.house_number, a.road].filter(Boolean).join(" ");
-        const ville =
-          a.city || a.town || a.village || a.municipality || "";
+        const ville = a.city || a.town || a.village || a.municipality || "";
         const quartier =
           a.suburb ||
           a.neighbourhood ||

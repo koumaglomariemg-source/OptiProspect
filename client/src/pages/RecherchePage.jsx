@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { RefreshCw, Search, X } from "lucide-react";
 import { api } from "../api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useStages } from "../hooks/useStages.js";
 import { useRefresh } from "../hooks/useRefresh.js";
 import useIsMobile from "../hooks/useIsMobile.js";
@@ -35,6 +36,7 @@ const EXPORT_COLUMNS = [
 
 export default function RecherchePage() {
   const { stages } = useStages();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [tab, setTab] = useState("prospects");
   const [users, setUsers] = useState([]);
@@ -70,11 +72,12 @@ export default function RecherchePage() {
   }, [location.state]);
 
   useEffect(() => {
+    if (user?.role === "commercial") return;
     api
       .users()
       .then(setUsers)
       .catch(() => {});
-  }, []);
+  }, [user?.role]);
 
   const set = (k, v) => {
     setFilters((f) => ({ ...f, [k]: v }));
@@ -448,7 +451,9 @@ export default function RecherchePage() {
                   </div>
                 ))}
               <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
-                <span className="text-xs text-slate-400">{total} résultat(s)</span>
+                <span className="text-xs text-slate-400">
+                  {total} résultat(s)
+                </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -473,149 +478,155 @@ export default function RecherchePage() {
           ) : (
             <>
               <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400 dark:border-slate-800">
-                <tr>
-                  <th className="px-5 py-3 font-semibold">Prospect</th>
-                  <th className="px-5 py-3 font-semibold">Étape courante</th>
-                  <th className="px-5 py-3 font-semibold">Quartier / N°</th>
-                  <th className="px-5 py-3 font-semibold">Commercial</th>
-                  <th className="px-5 py-3 font-semibold">Contrats</th>
-                  <th className="px-5 py-3 font-semibold">Prochaine action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
-                {loading && (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="px-5 py-10 text-center text-slate-400"
-                    >
-                      Chargement…
-                    </td>
-                  </tr>
-                )}
-                {!loading && data.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="px-5 py-10 text-center text-slate-400"
-                    >
-                      Aucun résultat
-                    </td>
-                  </tr>
-                )}
-                {!loading &&
-                  data.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                    >
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
-                            {initials(p.name)}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="truncate font-semibold">
-                              {p.name}
-                            </div>
-                            <div className="truncate text-xs text-slate-400">
-                              {p.company || "—"}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
-                          {p.current_step?.name || p.stage}
-                        </span>
-                        <div className="mt-1 text-[10px] text-slate-400">
-                          {p.steps_done}/{p.steps_total} étapes
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-xs text-slate-500">
-                        {p.quartier || "—"}
-                        {p.numero ? ` · ${p.numero}` : ""}
-                        {p.effectif ? ` · ${p.effectif} sal.` : ""}
-                      </td>
-                      <td className="px-5 py-3 text-xs text-slate-500">
-                        {p.assignee_name || "—"}
-                      </td>
-                      <td className="px-5 py-3 text-xs">
-                        {p.contrat_depose ? (
-                          <span className="mr-1 rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
-                            déposé
-                          </span>
-                        ) : null}
-                        {p.contrat_signe ? (
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
-                            signé
-                          </span>
-                        ) : null}
-                        {!p.contrat_depose && !p.contrat_signe ? "—" : null}
-                      </td>
-                      <td className="px-5 py-3 text-xs text-slate-500">
-                        {p.next_action_date ? (
-                          <span className="font-medium">
-                            {formatDateShort(p.next_action_date)}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                        {p.next_action ? (
-                          <span className="block max-w-[160px] truncate text-slate-400">
-                            {p.next_action}
-                          </span>
-                        ) : null}
-                      </td>
+                <table className="w-full min-w-[900px] text-left text-sm">
+                  <thead className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400 dark:border-slate-800">
+                    <tr>
+                      <th className="px-5 py-3 font-semibold">Prospect</th>
+                      <th className="px-5 py-3 font-semibold">
+                        Étape courante
+                      </th>
+                      <th className="px-5 py-3 font-semibold">Quartier / N°</th>
+                      <th className="px-5 py-3 font-semibold">Commercial</th>
+                      <th className="px-5 py-3 font-semibold">Contrats</th>
+                      <th className="px-5 py-3 font-semibold">
+                        Prochaine action
+                      </th>
                     </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
+                    {loading && (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="px-5 py-10 text-center text-slate-400"
+                        >
+                          Chargement…
+                        </td>
+                      </tr>
+                    )}
+                    {!loading && data.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="px-5 py-10 text-center text-slate-400"
+                        >
+                          Aucun résultat
+                        </td>
+                      </tr>
+                    )}
+                    {!loading &&
+                      data.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        >
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
+                                {initials(p.name)}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="truncate font-semibold">
+                                  {p.name}
+                                </div>
+                                <div className="truncate text-xs text-slate-400">
+                                  {p.company || "—"}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3">
+                            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
+                              {p.current_step?.name || p.stage}
+                            </span>
+                            <div className="mt-1 text-[10px] text-slate-400">
+                              {p.steps_done}/{p.steps_total} étapes
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 text-xs text-slate-500">
+                            {p.quartier || "—"}
+                            {p.numero ? ` · ${p.numero}` : ""}
+                            {p.effectif ? ` · ${p.effectif} sal.` : ""}
+                          </td>
+                          <td className="px-5 py-3 text-xs text-slate-500">
+                            {p.assignee_name || "—"}
+                          </td>
+                          <td className="px-5 py-3 text-xs">
+                            {p.contrat_depose ? (
+                              <span className="mr-1 rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
+                                déposé
+                              </span>
+                            ) : null}
+                            {p.contrat_signe ? (
+                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                signé
+                              </span>
+                            ) : null}
+                            {!p.contrat_depose && !p.contrat_signe ? "—" : null}
+                          </td>
+                          <td className="px-5 py-3 text-xs text-slate-500">
+                            {p.next_action_date ? (
+                              <span className="font-medium">
+                                {formatDateShort(p.next_action_date)}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                            {p.next_action ? (
+                              <span className="block max-w-[160px] truncate text-slate-400">
+                                {p.next_action}
+                              </span>
+                            ) : null}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-3 dark:border-slate-800">
-            <span className="text-xs text-slate-400">{total} résultat(s)</span>
-            <select
-              value={limit}
-              onChange={(e) => {
-                setLimit(Number(e.target.value));
-                setPage(1);
-              }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs outline-none dark:border-slate-700 dark:bg-slate-800"
-            >
-              <option value="10">10 / page</option>
-              <option value="25">25 / page</option>
-              <option value="50">50 / page</option>
-              <option value="100">100 / page</option>
-            </select>
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-indigo-300 disabled:opacity-40 dark:border-slate-700"
-              >
-                Précédent
-              </button>
-              <span className="text-xs text-slate-500">
-                Page {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-indigo-300 disabled:opacity-40 dark:border-slate-700"
-              >
-                Suivant
-              </button>
-              <button
-                onClick={load}
-                className="ml-1 flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-indigo-300 dark:border-slate-700"
-              >
-                <RefreshCw size={12} />
-              </button>
-            </div>
-          </div>
+              <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-3 dark:border-slate-800">
+                <span className="text-xs text-slate-400">
+                  {total} résultat(s)
+                </span>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs outline-none dark:border-slate-700 dark:bg-slate-800"
+                >
+                  <option value="10">10 / page</option>
+                  <option value="25">25 / page</option>
+                  <option value="50">50 / page</option>
+                  <option value="100">100 / page</option>
+                </select>
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-indigo-300 disabled:opacity-40 dark:border-slate-700"
+                  >
+                    Précédent
+                  </button>
+                  <span className="text-xs text-slate-500">
+                    Page {page} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-indigo-300 disabled:opacity-40 dark:border-slate-700"
+                  >
+                    Suivant
+                  </button>
+                  <button
+                    onClick={load}
+                    className="ml-1 flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-indigo-300 dark:border-slate-700"
+                  >
+                    <RefreshCw size={12} />
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </div>

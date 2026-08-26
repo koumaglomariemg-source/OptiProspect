@@ -5,7 +5,11 @@ class StageSetting {
   final String label;
   final String color;
 
-  const StageSetting({required this.key, required this.label, this.color = 'indigo'});
+  const StageSetting({
+    required this.key,
+    required this.label,
+    this.color = 'indigo',
+  });
 
   factory StageSetting.fromJson(Map<String, dynamic> json) {
     return StageSetting(
@@ -21,27 +25,52 @@ class Settings {
   final List<String> products;
   final List<String> zones;
   final List<String> refusalReasons;
+  final bool automationsEnabled;
+  final List<int> automationRelanceDays;
+  final int automationInactiveDays;
 
   const Settings({
     this.stages = const [],
     this.products = const [],
     this.zones = const [],
     this.refusalReasons = const [],
+    this.automationsEnabled = true,
+    this.automationRelanceDays = const [3, 7, 14],
+    this.automationInactiveDays = 21,
   });
 
   factory Settings.fromJson(Map<String, dynamic> json) {
+    final enabledRaw = json['automations_enabled'];
+    final enabled =
+        enabledRaw == true ||
+        enabledRaw == 1 ||
+        enabledRaw?.toString() == '1' ||
+        enabledRaw?.toString().toLowerCase() == 'true';
     return Settings(
-      stages: (json['stages'] as List?)
+      stages:
+          (json['stages'] as List?)
               ?.map((e) => StageSetting.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      products: (json['products'] as List?)?.map((e) => e.toString()).toList() ??
+      products:
+          (json['products'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
-      zones: (json['zones'] as List?)?.map((e) => e.toString()).toList() ??
+      zones:
+          (json['zones'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       refusalReasons:
-          (json['refusal_reasons'] as List?)?.map((e) => e.toString()).toList() ??
-              const [],
+          (json['refusal_reasons'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      automationsEnabled: enabledRaw == null ? true : enabled,
+      automationRelanceDays:
+          (json['automation_relance_days'] as List?)
+              ?.map((e) => toInt(e) ?? 0)
+              .where((e) => e > 0)
+              .toList() ??
+          const [3, 7, 14],
+      automationInactiveDays: toInt(json['automation_inactive_days']) ?? 21,
     );
   }
 }

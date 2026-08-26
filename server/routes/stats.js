@@ -33,55 +33,52 @@ async function scope(req, prefix = "") {
   return { where: clauses.length ? clauses.join(" AND ") : "", params };
 }
 
-router.get("/overview", ah(async (req, res) => {
-  const s = await scope(req);
-  const sWhere = s.where ? ` WHERE ${s.where}` : "";
-  const total = await db
-    .get(`SELECT COUNT(*) AS n FROM prospects${sWhere}`, ...s.params)
-    .then((r) => r.n);
-  const converted = await db
-    .get(
-      `SELECT COUNT(*) AS n FROM prospects WHERE temperature = 'converti'${s.where ? ` AND ${s.where}` : ""}`,
-      ...s.params,
-    )
-    .then((r) => r.n);
-  const lost = await db
-    .get(
-      `SELECT COUNT(*) AS n FROM prospects WHERE temperature = 'abandonne'${s.where ? ` AND ${s.where}` : ""}`,
-      ...s.params,
-    )
-    .then((r) => r.n);
-  const active = total - converted - lost;
-  const pipelineValue = await db
-    .get(
-      `SELECT COALESCE(SUM(value),0) AS s FROM prospects WHERE temperature NOT IN ('converti','abandonne')${s.where ? ` AND ${s.where}` : ""}`,
-      ...s.params,
-    )
-    .then((r) => r.s);
-  const byStage = await db
-    .all(
+router.get(
+  "/overview",
+  ah(async (req, res) => {
+    const s = await scope(req);
+    const sWhere = s.where ? ` WHERE ${s.where}` : "";
+    const total = await db
+      .get(`SELECT COUNT(*) AS n FROM prospects${sWhere}`, ...s.params)
+      .then((r) => r.n);
+    const converted = await db
+      .get(
+        `SELECT COUNT(*) AS n FROM prospects WHERE temperature = 'converti'${s.where ? ` AND ${s.where}` : ""}`,
+        ...s.params,
+      )
+      .then((r) => r.n);
+    const lost = await db
+      .get(
+        `SELECT COUNT(*) AS n FROM prospects WHERE temperature = 'abandonne'${s.where ? ` AND ${s.where}` : ""}`,
+        ...s.params,
+      )
+      .then((r) => r.n);
+    const active = total - converted - lost;
+    const pipelineValue = await db
+      .get(
+        `SELECT COALESCE(SUM(value),0) AS s FROM prospects WHERE temperature NOT IN ('converti','abandonne')${s.where ? ` AND ${s.where}` : ""}`,
+        ...s.params,
+      )
+      .then((r) => r.s);
+    const byStage = await db.all(
       `SELECT stage, COUNT(*) AS n FROM prospects${sWhere} GROUP BY stage`,
       ...s.params,
     );
-  const byTemp = await db
-    .all(
+    const byTemp = await db.all(
       `SELECT temperature, COUNT(*) AS n FROM prospects${sWhere} GROUP BY temperature`,
       ...s.params,
     );
-  const bySource = await db
-    .all(
+    const bySource = await db.all(
       `SELECT COALESCE(source, 'autre') AS source, COUNT(*) AS n FROM prospects${sWhere} GROUP BY source`,
       ...s.params,
     );
-  const byZone = await db
-    .all(
+    const byZone = await db.all(
       `SELECT COALESCE(secteur, 'Non renseigné') AS secteur, COUNT(*) AS n FROM prospects${sWhere} GROUP BY secteur ORDER BY n DESC LIMIT 8`,
       ...s.params,
     );
-  const ns = await scope(req, "p");
-  const nsWhere = ns.where ? ` AND ${ns.where}` : "";
-  const nextActions = await db
-    .all(
+    const ns = await scope(req, "p");
+    const nsWhere = ns.where ? ` AND ${ns.where}` : "";
+    const nextActions = await db.all(
       `
     SELECT p.id, p.name, p.company, p.next_action, p.next_action_date, p.assigned_to, u.name AS assignee_name
     FROM prospects p LEFT JOIN users u ON u.id = p.assigned_to
@@ -90,23 +87,26 @@ router.get("/overview", ah(async (req, res) => {
   `,
       ...ns.params,
     );
-  res.json({
-    total,
-    active,
-    converted,
-    lost,
-    conversion_rate: total ? Math.round((converted / total) * 100) : 0,
-    pipeline_value: pipelineValue,
-    by_stage: byStage,
-    by_temperature: byTemp,
-    by_source: bySource,
-    by_zone: byZone,
-    next_actions: nextActions,
-  });
-}));
+    res.json({
+      total,
+      active,
+      converted,
+      lost,
+      conversion_rate: total ? Math.round((converted / total) * 100) : 0,
+      pipeline_value: pipelineValue,
+      by_stage: byStage,
+      by_temperature: byTemp,
+      by_source: bySource,
+      by_zone: byZone,
+      next_actions: nextActions,
+    });
+  }),
+);
 
-router.get("/by-user", ah(async (req, res) => {
-  const base = `
+router.get(
+  "/by-user",
+  ah(async (req, res) => {
+    const base = `
     SELECT u.id, u.name, u.role,
       COUNT(p.id) AS total,
       SUM(CASE WHEN p.temperature = 'converti' THEN 1 ELSE 0 END) AS converted,
@@ -122,36 +122,45 @@ router.get("/by-user", ah(async (req, res) => {
     FROM users u
     LEFT JOIN prospects p ON p.assigned_to = u.id AND p.archived_at IS NULL
   `;
-  let rows;
-  const only = Number(req.query.commercial) || null;
-  if (req.user.role === "commercial") {
-    rows = await db.all(`${base} WHERE u.id = ? AND u.archived_at IS NULL GROUP BY u.id`, req.user.id);
-  } else if (only) {
-    rows = await db.all(`${base} WHERE u.id = ? AND u.archived_at IS NULL GROUP BY u.id`, only);
-  } else if (req.user.role === "manager") {
-    const ids = await teamIds(req.user);
-    rows = await db
-      .all(
+    let rows;
+    const only = Number(req.query.commercial) || null;
+    if (req.user.role === "commercial") {
+      rows = await db.all(
+        `${base} WHERE u.id = ? AND u.archived_at IS NULL GROUP BY u.id`,
+        req.user.id,
+      );
+    } else if (only) {
+      rows = await db.all(
+        `${base} WHERE u.id = ? AND u.archived_at IS NULL GROUP BY u.id`,
+        only,
+      );
+    } else if (req.user.role === "manager") {
+      const ids = await teamIds(req.user);
+      rows = await db.all(
         `${base} WHERE u.id IN (${ids.map(() => "?").join(",")}) AND u.archived_at IS NULL GROUP BY u.id ORDER BY converted DESC`,
         ...ids,
       );
-  } else {
-    rows = await db.all(`${base} WHERE u.archived_at IS NULL GROUP BY u.id ORDER BY converted DESC`);
-  }
-  res.json(
-    rows.map((r) => ({
-      ...r,
-      converted: r.converted ?? 0,
-      lost: r.lost ?? 0,
-      advanced: r.advanced ?? 0,
-    })),
-  );
-}));
+    } else {
+      rows = await db.all(
+        `${base} WHERE u.archived_at IS NULL GROUP BY u.id ORDER BY converted DESC`,
+      );
+    }
+    res.json(
+      rows.map((r) => ({
+        ...r,
+        converted: r.converted ?? 0,
+        lost: r.lost ?? 0,
+        advanced: r.advanced ?? 0,
+      })),
+    );
+  }),
+);
 
-router.get("/clients", ah(async (req, res) => {
-  const s = await scope(req, "p");
-  const rows = await db
-    .all(
+router.get(
+  "/clients",
+  ah(async (req, res) => {
+    const s = await scope(req, "p");
+    const rows = await db.all(
       `
     SELECT p.id, p.name, p.company, p.email, p.phone, p.value, p.converted_at, p.assigned_to,
            u.name AS assignee_name,
@@ -166,48 +175,52 @@ router.get("/clients", ah(async (req, res) => {
   `,
       ...s.params,
     );
-  res.json(rows);
-}));
+    res.json(rows);
+  }),
+);
 
-router.get("/targets", ah(async (req, res) => {
-  const ym = /^\d{4}-\d{2}$/.test(String(req.query.year_month || ""))
-    ? String(req.query.year_month)
-    : new Date().toISOString().slice(0, 7);
-  let where = "";
-  let params = [ym, ym];
-  if (req.user.role === "commercial") {
-    where = "WHERE u.id = ? AND u.archived_at IS NULL";
-    params = [req.user.id, ym, ym];
-  } else if (req.user.role === "manager") {
-    const ids = await teamIds(req.user);
-    where = `WHERE u.id IN (${ids.map(() => "?").join(",")}) AND u.archived_at IS NULL`;
-    params = [...ids, ym, ym];
-  } else {
-    where = "WHERE u.archived_at IS NULL";
-  }
-  const rows = await db
-    .all(
+router.get(
+  "/targets",
+  ah(async (req, res) => {
+    const ym = /^\d{4}-\d{2}$/.test(String(req.query.year_month || ""))
+      ? String(req.query.year_month)
+      : new Date().toISOString().slice(0, 7);
+    let where = "";
+    let params = [ym, ym];
+    if (req.user.role === "commercial") {
+      where = "WHERE u.id = ? AND u.archived_at IS NULL";
+      params = [ym, ym, req.user.id];
+    } else if (req.user.role === "manager") {
+      const ids = await teamIds(req.user);
+      where = `WHERE u.id IN (${ids.map(() => "?").join(",")}) AND u.archived_at IS NULL`;
+      params = [ym, ym, ...ids];
+    } else {
+      where = "WHERE u.archived_at IS NULL";
+    }
+    const rows = await db.all(
       `
     SELECT u.id, u.name, u.role,
-      COALESCE(t.target_value, 0) AS target_value,
+      COALESCE(MAX(t.target_value), 0) AS target_value,
       COALESCE(SUM(CASE WHEN p.temperature = 'converti' AND DATE_FORMAT(p.converted_at, '%Y-%m') = ? THEN p.value ELSE 0 END), 0) AS achieved
     FROM users u
     LEFT JOIN user_targets t ON t.user_id = u.id AND t.\`year_month\` = ?
     LEFT JOIN prospects p ON p.assigned_to = u.id AND p.archived_at IS NULL
     ${where}
-    GROUP BY u.id
+    GROUP BY u.id, u.name, u.role
     ORDER BY u.name ASC
   `,
       ...params,
     );
-  res.json({ year_month: ym, users: rows });
-}));
+    res.json({ year_month: ym, users: rows });
+  }),
+);
 
-router.get("/timeline", ah(async (req, res) => {
-  const days = Number(req.query.days) || 30;
-  const s = await scope(req);
-  const rows = await db
-    .all(
+router.get(
+  "/timeline",
+  ah(async (req, res) => {
+    const days = Number(req.query.days) || 30;
+    const s = await scope(req);
+    const rows = await db.all(
       `
     SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS day, COUNT(*) AS n
     FROM prospects
@@ -217,8 +230,9 @@ router.get("/timeline", ah(async (req, res) => {
       days,
       ...s.params,
     );
-  res.json(rows);
-}));
+    res.json(rows);
+  }),
+);
 
 const TEMP_PROB = {
   froid: 0.05,
@@ -228,127 +242,181 @@ const TEMP_PROB = {
   abandonne: 0,
 };
 
-router.get("/at-risk", ah(async (req, res) => {
-  const items = await getAtRisk(req.user);
-  res.json(items);
-}));
+router.get(
+  "/at-risk",
+  ah(async (req, res) => {
+    const items = await getAtRisk(req.user);
+    res.json(items);
+  }),
+);
 
-router.get("/aging", ah(async (req, res) => {
-  const s = await scope(req);
-  const sWhere = s.where ? ` WHERE ${s.where}` : "";
-  const rows = await db.all(
-    `SELECT p.id, p.created_at, p.value
+router.get(
+  "/aging",
+  ah(async (req, res) => {
+    const s = await scope(req);
+    const sWhere = s.where ? ` WHERE ${s.where}` : "";
+    const rows = await db.all(
+      `SELECT p.id, p.created_at, p.value
      FROM prospects p${sWhere}
        AND p.temperature NOT IN ('converti', 'abandonne')`,
-    ...s.params,
-  );
-  const now = Date.now();
-  const buckets = [
-    { key: "0_7", label: "0 à 7 jours", min: 0, max: 7, n: 0, value: 0 },
-    { key: "8_30", label: "8 à 30 jours", min: 8, max: 30, n: 0, value: 0 },
-    { key: "31_90", label: "31 à 90 jours", min: 31, max: 90, n: 0, value: 0 },
-    { key: "90_plus", label: "Plus de 90 jours", min: 91, max: Infinity, n: 0, value: 0 },
-  ];
-  let ageSum = 0;
-  let oldest = null;
-  for (const r of rows) {
-    const created = new Date(String(r.created_at).replace("T", " ")).getTime();
-    const age = Math.floor((now - created) / 86_400_000);
-    ageSum += age;
-    if (!oldest || age > oldest.days) oldest = { days: age, id: r.id };
-    const b = buckets.find((b) => age >= b.min && age <= b.max) || buckets[buckets.length - 1];
-    b.n += 1;
-    b.value += r.value || 0;
-  }
-  res.json({
-    total: rows.length,
-    avg_age_days: rows.length ? Math.round(ageSum / rows.length) : 0,
-    oldest: oldest,
-    buckets,
-  });
-}));
-
-router.get("/forecast", ah(async (req, res) => {
-  const s = await scope(req);
-  const sWhere = s.where ? ` WHERE ${s.where}` : "";
-  const rows = await db
-    .all(`SELECT temperature, value FROM prospects${sWhere}`, ...s.params);
-  const total = rows.length;
-
-  const weightedPipeline = rows.reduce(
-    (acc, r) =>
-      acc + (r.value || 0) * (TEMP_PROB[r.temperature] ?? TEMP_PROB.tiede),
-    0,
-  );
-
-  const convertedRows = rows.filter((r) => r.temperature === "converti");
-  const closed = rows.filter(
-    (r) => r.temperature === "converti" || r.temperature === "abandonne",
-  );
-  const winRate = closed.length
-    ? convertedRows.length / closed.length
-    : total
-      ? convertedRows.length / total
-      : 0;
-  const avgValue = convertedRows.length
-    ? convertedRows.reduce((s, r) => s + (r.value || 0), 0) /
-      convertedRows.length
-    : 0;
-
-  const recentCount = await db
-    .get(
-      `SELECT COUNT(*) AS n FROM prospects WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)${s.where ? ` AND ${s.where}` : ""}`,
       ...s.params,
-    )
-    .then((r) => r.n);
-  const perDay = recentCount / 30;
+    );
+    const now = Date.now();
+    const buckets = [
+      { key: "0_7", label: "0 à 7 jours", min: 0, max: 7, n: 0, value: 0 },
+      { key: "8_30", label: "8 à 30 jours", min: 8, max: 30, n: 0, value: 0 },
+      {
+        key: "31_90",
+        label: "31 à 90 jours",
+        min: 31,
+        max: 90,
+        n: 0,
+        value: 0,
+      },
+      {
+        key: "90_plus",
+        label: "Plus de 90 jours",
+        min: 91,
+        max: Infinity,
+        n: 0,
+        value: 0,
+      },
+    ];
+    let ageSum = 0;
+    let oldest = null;
+    for (const r of rows) {
+      const created = new Date(
+        String(r.created_at).replace("T", " "),
+      ).getTime();
+      const age = Math.floor((now - created) / 86_400_000);
+      ageSum += age;
+      if (!oldest || age > oldest.days) oldest = { days: age, id: r.id };
+      const b =
+        buckets.find((b) => age >= b.min && age <= b.max) ||
+        buckets[buckets.length - 1];
+      b.n += 1;
+      b.value += r.value || 0;
+    }
+    res.json({
+      total: rows.length,
+      avg_age_days: rows.length ? Math.round(ageSum / rows.length) : 0,
+      oldest: oldest,
+      buckets,
+    });
+  }),
+);
 
-  const expectedNext30 = perDay * 30 * winRate * avgValue;
-  const expectedConversions30 = perDay * 30 * winRate;
+router.get(
+  "/forecast",
+  ah(async (req, res) => {
+    const s = await scope(req);
+    const sWhere = s.where ? ` WHERE ${s.where}` : "";
+    const rows = await db.all(
+      `SELECT temperature, value FROM prospects${sWhere}`,
+      ...s.params,
+    );
+    const total = rows.length;
 
-  res.json({
-    weighted_pipeline: Math.round(weightedPipeline),
-    win_rate: Math.round(winRate * 100),
-    avg_deal_value: Math.round(avgValue),
-    expected_next30: Math.round(expectedNext30),
-    expected_conversions30: Math.round(expectedConversions30),
-    prospects_per_day: Math.round(perDay * 10) / 10,
-  });
-}));
+    const weightedPipeline = rows.reduce(
+      (acc, r) =>
+        acc + (r.value || 0) * (TEMP_PROB[r.temperature] ?? TEMP_PROB.tiede),
+      0,
+    );
 
-router.get("/counts", ah(async (req, res) => {
-  const userCount = await db.get("SELECT COUNT(*) AS n FROM users WHERE archived_at IS NULL").then(r => r.n);
-  const templateCount = await db.get("SELECT COUNT(*) AS n FROM pipeline_templates").then(r => r.n);
-  const productsRow = await db.get("SELECT value FROM settings WHERE \`key\` = 'products'");
-  let productsCount = 0;
-  if (productsRow) {
-    try { productsCount = JSON.parse(productsRow.value).length; } catch {}
-  }
-  
-  // Répartition par rôle
-  const roleRows = await db.all("SELECT role, COUNT(*) AS n FROM users WHERE archived_at IS NULL GROUP BY role");
-  const roles = { admin: 0, manager: 0, commercial: 0 };
-  for (const r of roleRows) roles[r.role] = r.n;
-  
-  res.json({ users: userCount, pipeline_templates: templateCount, products: productsCount, roles });
-}));
+    const convertedRows = rows.filter((r) => r.temperature === "converti");
+    const closed = rows.filter(
+      (r) => r.temperature === "converti" || r.temperature === "abandonne",
+    );
+    const winRate = closed.length
+      ? convertedRows.length / closed.length
+      : total
+        ? convertedRows.length / total
+        : 0;
+    const avgValue = convertedRows.length
+      ? convertedRows.reduce((s, r) => s + (r.value || 0), 0) /
+        convertedRows.length
+      : 0;
 
-router.get("/prospection", ah(async (req, res) => {
-  const s = await scope(req);
-  const sWhere = s.where ? ` WHERE ${s.where}` : "";
-  const days = Number(req.query.days) || 30;
+    const recentCount = await db
+      .get(
+        `SELECT COUNT(*) AS n FROM prospects WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)${s.where ? ` AND ${s.where}` : ""}`,
+        ...s.params,
+      )
+      .then((r) => r.n);
+    const perDay = recentCount / 30;
 
-  const interactionsByType = await db.all(`
+    const expectedNext30 = perDay * 30 * winRate * avgValue;
+    const expectedConversions30 = perDay * 30 * winRate;
+
+    res.json({
+      weighted_pipeline: Math.round(weightedPipeline),
+      win_rate: Math.round(winRate * 100),
+      avg_deal_value: Math.round(avgValue),
+      expected_next30: Math.round(expectedNext30),
+      expected_conversions30: Math.round(expectedConversions30),
+      prospects_per_day: Math.round(perDay * 10) / 10,
+    });
+  }),
+);
+
+router.get(
+  "/counts",
+  ah(async (req, res) => {
+    const userCount = await db
+      .get("SELECT COUNT(*) AS n FROM users WHERE archived_at IS NULL")
+      .then((r) => r.n);
+    const templateCount = await db
+      .get("SELECT COUNT(*) AS n FROM pipeline_templates")
+      .then((r) => r.n);
+    const productsRow = await db.get(
+      "SELECT value FROM settings WHERE \`key\` = 'products'",
+    );
+    let productsCount = 0;
+    if (productsRow) {
+      try {
+        productsCount = JSON.parse(productsRow.value).length;
+      } catch {}
+    }
+
+    // Répartition par rôle
+    const roleRows = await db.all(
+      "SELECT role, COUNT(*) AS n FROM users WHERE archived_at IS NULL GROUP BY role",
+    );
+    const roles = { admin: 0, manager: 0, commercial: 0 };
+    for (const r of roleRows) roles[r.role] = r.n;
+
+    res.json({
+      users: userCount,
+      pipeline_templates: templateCount,
+      products: productsCount,
+      roles,
+    });
+  }),
+);
+
+router.get(
+  "/prospection",
+  ah(async (req, res) => {
+    const s = await scope(req);
+    const sWhere = s.where ? ` WHERE ${s.where}` : "";
+    const days = Number(req.query.days) || 30;
+
+    const interactionsByType = await db.all(
+      `
     SELECT i.type, DATE_FORMAT(i.created_at, '%Y-%m-%d') AS day, COUNT(*) AS n
     FROM interactions i
     JOIN prospects p ON p.id = i.prospect_id
-    ${sWhere ? ` AND ${s.where.replace(/^/, 'p.')}` : ''}
+    ${sWhere ? ` AND ${s.where.replace(/^/, "p.")}` : ""}
     AND i.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
     AND i.archived_at IS NULL
     GROUP BY i.type, day ORDER BY day ASC
-  `, days, ...s.params);
+  `,
+      days,
+      ...s.params,
+    );
 
-  const interactionsByUser = await db.all(`
+    const interactionsByUser = await db.all(
+      `
     SELECT u.id, u.name, u.role,
       SUM(CASE WHEN i.type = 'appel' THEN 1 ELSE 0 END) AS appels,
       SUM(CASE WHEN i.type = 'visite' THEN 1 ELSE 0 END) AS visites,
@@ -363,12 +431,20 @@ router.get("/prospection", ah(async (req, res) => {
     LEFT JOIN interactions i ON i.prospect_id = p.id AND i.archived_at IS NULL
       AND i.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
     WHERE u.archived_at IS NULL
-    ${req.user.role === 'commercial' ? 'AND u.id = ?' : ''}
-    ${req.user.role === 'manager' && !req.query.commercial ? 'AND u.manager_id = ?' : ''}
+    ${req.user.role === "commercial" ? "AND u.id = ?" : ""}
+    ${req.user.role === "manager" && !req.query.commercial ? "AND u.manager_id = ?" : ""}
     GROUP BY u.id ORDER BY total DESC
-  `, days, ...(req.user.role === 'commercial' ? [req.user.id] : req.user.role === 'manager' && !req.query.commercial ? [req.user.id] : []));
+  `,
+      days,
+      ...(req.user.role === "commercial"
+        ? [req.user.id]
+        : req.user.role === "manager" && !req.query.commercial
+          ? [req.user.id]
+          : []),
+    );
 
-  const meetingsByUser = await db.all(`
+    const meetingsByUser = await db.all(
+      `
     SELECT u.id, u.name,
       COUNT(DISTINCT mp.meeting_id) AS meetings_count,
       SUM(CASE WHEN m.type = 'terrain' THEN 1 ELSE 0 END) AS terrain_meetings,
@@ -378,12 +454,20 @@ router.get("/prospection", ah(async (req, res) => {
     LEFT JOIN meetings m ON m.id = mp.meeting_id AND m.archived_at IS NULL
       AND m.starts_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
     WHERE u.archived_at IS NULL
-    ${req.user.role === 'commercial' ? 'AND u.id = ?' : ''}
-    ${req.user.role === 'manager' && !req.query.commercial ? 'AND u.manager_id = ?' : ''}
+    ${req.user.role === "commercial" ? "AND u.id = ?" : ""}
+    ${req.user.role === "manager" && !req.query.commercial ? "AND u.manager_id = ?" : ""}
     GROUP BY u.id ORDER BY meetings_count DESC
-  `, days, ...(req.user.role === 'commercial' ? [req.user.id] : req.user.role === 'manager' && !req.query.commercial ? [req.user.id] : []));
+  `,
+      days,
+      ...(req.user.role === "commercial"
+        ? [req.user.id]
+        : req.user.role === "manager" && !req.query.commercial
+          ? [req.user.id]
+          : []),
+    );
 
-  const dailyActivity = await db.all(`
+    const dailyActivity = await db.all(
+      `
     SELECT DATE_FORMAT(i.created_at, '%Y-%m-%d') AS day,
       SUM(CASE WHEN i.type = 'appel' THEN 1 ELSE 0 END) AS appels,
       SUM(CASE WHEN i.type = 'visite' THEN 1 ELSE 0 END) AS visites,
@@ -395,19 +479,23 @@ router.get("/prospection", ah(async (req, res) => {
       COUNT(*) AS total
     FROM interactions i
     JOIN prospects p ON p.id = i.prospect_id
-    ${sWhere ? ` AND ${s.where.replace(/^/, 'p.')}` : ''}
+    ${sWhere ? ` AND ${s.where.replace(/^/, "p.")}` : ""}
     AND i.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
     AND i.archived_at IS NULL
     GROUP BY day ORDER BY day ASC
-  `, days, ...s.params);
+  `,
+      days,
+      ...s.params,
+    );
 
-  res.json({
-    days,
-    interactions_by_type: interactionsByType,
-    interactions_by_user: interactionsByUser,
-    meetings_by_user: meetingsByUser,
-    daily_activity: dailyActivity,
-  });
-}));
+    res.json({
+      days,
+      interactions_by_type: interactionsByType,
+      interactions_by_user: interactionsByUser,
+      meetings_by_user: meetingsByUser,
+      daily_activity: dailyActivity,
+    });
+  }),
+);
 
 export default router;

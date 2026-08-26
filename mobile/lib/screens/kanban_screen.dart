@@ -7,9 +7,11 @@ import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
+import '../services/export_service.dart';
 import '../utils/constants.dart';
 import '../utils/formatters.dart';
 import '../widgets/common.dart';
+import '../widgets/export_menu.dart';
 import '../widgets/skeleton.dart';
 import 'prospect_detail_screen.dart';
 import 'prospect_form_screen.dart';
@@ -53,12 +55,16 @@ class _KanbanScreenState extends State<KanbanScreen> {
   }
 
   List<StageSetting> _defaultStages() => const [
-        StageSetting(key: 'identification', label: 'Identification', color: 'sky'),
-        StageSetting(key: 'prospection', label: 'Prospection', color: 'indigo'),
-        StageSetting(key: 'suivi', label: 'Suivi', color: 'amber'),
-        StageSetting(key: 'depot_contrat', label: 'Dépôt contrat', color: 'violet'),
-        StageSetting(key: 'signature_contrat', label: 'Signature contrat', color: 'emerald'),
-      ];
+    StageSetting(key: 'identification', label: 'Identification', color: 'sky'),
+    StageSetting(key: 'prospection', label: 'Prospection', color: 'indigo'),
+    StageSetting(key: 'suivi', label: 'Suivi', color: 'amber'),
+    StageSetting(key: 'depot_contrat', label: 'Dépôt contrat', color: 'violet'),
+    StageSetting(
+      key: 'signature_contrat',
+      label: 'Signature contrat',
+      color: 'emerald',
+    ),
+  ];
 
   Map<String, List<Prospect>> get _byStage {
     final map = <String, List<Prospect>>{};
@@ -78,7 +84,9 @@ class _KanbanScreenState extends State<KanbanScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -92,18 +100,20 @@ class _KanbanScreenState extends State<KanbanScreen> {
       body: _error != null
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _prospects == null
-              ? const SkeletonScreen(showStats: false)
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: Column(
-                    children: [
-                      _buildHeader(canWrite),
-                      Expanded(
-                        child: kIsWeb ? _buildWebBoard(canWrite) : _buildDragBoard(),
-                      ),
-                    ],
+          ? const SkeletonScreen(showStats: false)
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: Column(
+                children: [
+                  _buildHeader(canWrite),
+                  Expanded(
+                    child: kIsWeb
+                        ? _buildWebBoard(canWrite)
+                        : _buildDragBoard(),
                   ),
-                ),
+                ],
+              ),
+            ),
       floatingActionButton: canWrite
           ? FloatingActionButton.extended(
               onPressed: () async {
@@ -145,10 +155,9 @@ class _KanbanScreenState extends State<KanbanScreen> {
             ),
             contentsWhenEmpty: _EmptyColumn(color: color),
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
               border: Border.all(color: color.withValues(alpha: 0.2)),
             ),
@@ -167,11 +176,11 @@ class _KanbanScreenState extends State<KanbanScreen> {
         }).toList(),
         onItemReorder:
             (oldItemIndex, oldListIndex, newItemIndex, newListIndex) {
-          final fromKey = _stages[oldListIndex].key;
-          final fromList = _byStage[fromKey] ?? [];
-          if (oldItemIndex < 0 || oldItemIndex >= fromList.length) return;
-          _moveProspect(fromList[oldItemIndex], _stages[newListIndex].key);
-        },
+              final fromKey = _stages[oldListIndex].key;
+              final fromList = _byStage[fromKey] ?? [];
+              if (oldItemIndex < 0 || oldItemIndex >= fromList.length) return;
+              _moveProspect(fromList[oldItemIndex], _stages[newListIndex].key);
+            },
         onListReorder: (_, __) {},
         axis: Axis.horizontal,
         listWidth: 300,
@@ -256,12 +265,22 @@ class _KanbanScreenState extends State<KanbanScreen> {
                   },
                 ),
               ),
+              const SizedBox(width: 4),
+              ProspectExportButton(
+                columns: kKanbanExportColumns,
+                rows: _prospects ?? const [],
+                baseName: 'optiprospect-kanban',
+                sheetTitle: 'Prospects',
+                enabled: (_prospects ?? const []).isNotEmpty,
+              ),
               if (canWrite) ...[
                 const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: () async {
                     final created = await Navigator.of(context).push<bool>(
-                      MaterialPageRoute(builder: (_) => const ProspectFormScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const ProspectFormScreen(),
+                      ),
                     );
                     if (created == true) _load();
                   },
@@ -277,7 +296,10 @@ class _KanbanScreenState extends State<KanbanScreen> {
             isDense: true,
             decoration: const InputDecoration(labelText: 'Filtrer par source'),
             items: [
-              const DropdownMenuItem(value: null, child: Text('Toutes les sources')),
+              const DropdownMenuItem(
+                value: null,
+                child: Text('Toutes les sources'),
+              ),
               for (final k in kSourceKeys)
                 DropdownMenuItem(value: k, child: Text(kSourceLabels[k] ?? k)),
             ],
@@ -309,7 +331,9 @@ class _ColumnHeader extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusLg)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
         border: Border(bottom: BorderSide(color: color.withValues(alpha: 0.2))),
       ),
       child: Row(
@@ -317,10 +341,7 @@ class _ColumnHeader extends StatelessWidget {
           Container(
             width: 10,
             height: 10,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -368,7 +389,11 @@ class _EmptyColumn extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined, size: 32, color: color.withValues(alpha: 0.4)),
+            Icon(
+              Icons.inbox_outlined,
+              size: 32,
+              color: color.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 8),
             Text(
               'Aucun prospect',
@@ -406,7 +431,9 @@ class _KanbanCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.08),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
       color: scheme.surface,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -453,7 +480,10 @@ class _KanbanCard extends StatelessWidget {
                     p.company!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               const SizedBox(height: 10),
@@ -499,7 +529,11 @@ class _KanbanCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${p.stepsDone}/${p.stepsTotal}',
-                      style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -514,7 +548,11 @@ class _KanbanCard extends StatelessWidget {
                               Icon(
                                 overdue ? Icons.error_outline : Icons.event,
                                 size: 14,
-                                color: overdue ? Colors.red : (today ? Colors.amber.shade700 : scheme.onSurfaceVariant),
+                                color: overdue
+                                    ? Colors.red
+                                    : (today
+                                          ? Colors.amber.shade700
+                                          : scheme.onSurfaceVariant),
                               ),
                               const SizedBox(width: 4),
                               Expanded(
@@ -524,7 +562,9 @@ class _KanbanCard extends StatelessWidget {
                                     fontSize: 11,
                                     color: overdue
                                         ? Colors.red
-                                        : (today ? Colors.amber.shade700 : scheme.onSurfaceVariant),
+                                        : (today
+                                              ? Colors.amber.shade700
+                                              : scheme.onSurfaceVariant),
                                     fontWeight: FontWeight.w600,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -534,7 +574,12 @@ class _KanbanCard extends StatelessWidget {
                           )
                         : Text(
                             'Aucune action',
-                            style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: scheme.onSurfaceVariant.withValues(
+                                alpha: 0.6,
+                              ),
+                            ),
                           ),
                   ),
                   Tooltip(
