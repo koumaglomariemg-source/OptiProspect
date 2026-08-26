@@ -132,10 +132,10 @@ export async function runFollowUpSequences() {
         await createRelance({
           prospect: p,
           key: `creation_${w.d}`,
-          action: `Relance automatique J+${w.d} — ${p.name}`,
+          action: `Recontacter ${p.name}`,
           dueInDays: 1,
-          title: `Relance automatique J+${w.d}`,
-          message: `« ${p.name} » (${company}) est suivi depuis ${daysInt} jours sans contact. Pensez à le relancer.`,
+          title: `À relancer`,
+          message: `« ${p.name} » (${company}) attend un premier contact depuis ${daysInt} jours.`,
           emailSubject: `Suivi de notre échange — ${company}`,
           emailText: [
             `Bonjour ${firstName},`,
@@ -158,10 +158,10 @@ export async function runFollowUpSequences() {
         await createRelance({
           prospect: p,
           key: `inactive_${weekKey}`,
-          action: `Relance d'inactivité — ${p.name}`,
+          action: `Reprendre contact avec ${p.name}`,
           dueInDays: 1,
-          title: "Prospect inactif",
-          message: `« ${p.name} » (${company}) est sans contact depuis ${daysInt} jours. Reprenez contact avant qu'il ne refroidisse.`,
+          title: "Sans nouvelles",
+          message: `« ${p.name} » (${company}) sans échange depuis ${daysInt} jours. Pensez à reprendre contact.`,
           emailSubject: `Reprenons contact — ${company}`,
           emailText: [
             `Bonjour ${firstName},`,
