@@ -244,7 +244,10 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
     .map((f) => f.label);
 
   const save = async (validate = false) => {
-    if (!active) return;
+    if (!active?.progress_id) {
+      setError("Étape invalide — rechargez la page");
+      return;
+    }
     setError("");
     if (validate && requiredMissing.length) {
       setError(`Champs obligatoires manquants : ${requiredMissing.join(", ")}`);
@@ -280,7 +283,7 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
   };
 
   const unvalidate = async () => {
-    if (!active || active.status !== "validated") return;
+    if (!active?.progress_id || active.status !== "validated") return;
     setError("");
     setBusy(true);
     try {
