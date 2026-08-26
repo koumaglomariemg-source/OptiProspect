@@ -80,13 +80,6 @@ export default function CartePage() {
     return () => window.removeEventListener("pf-open-prospect", onOpen);
   }, []);
 
-  // Quand le drawer se ferme, recalculer la taille Leaflet (PWA standalone)
-  useEffect(() => {
-    if (!drawerProspect && mapRef.current) {
-      setTimeout(() => mapRef.current?.invalidateSize(), 100);
-    }
-  }, [drawerProspect]);
-
   // Création de la carte (une seule fois)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -174,6 +167,13 @@ export default function CartePage() {
   }, [prospects, dark, byKey]);
 
   const drawerProspect = prospects.find((p) => String(p.id) === String(drawerId));
+
+  // Quand le drawer se ferme, recalculer la taille Leaflet (PWA standalone)
+  useEffect(() => {
+    if (!drawerProspect && mapRef.current) {
+      setTimeout(() => mapRef.current?.invalidateSize(), 100);
+    }
+  }, [drawerProspect]);
 
   return (
     <div className="flex h-full flex-col">

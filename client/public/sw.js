@@ -1,4 +1,4 @@
-const CACHE = 'optiprospect-v10';
+const CACHE = 'optiprospect-v11';
 const PRECACHE = [
   '/',
   '/index.html',
