@@ -82,7 +82,7 @@ class _DayScreenState extends State<DayScreen> {
     }
     final kpis = <(String, String, IconData, Color)>[
       ('Relances du jour', '${data.countRelancesToday}', Icons.alarm, Colors.orange),
-      ('RDV (7j)', '${data.countMeetings}', Icons.event, Colors.indigo),
+      ('RDV (7j)', '${data.countMeetings}', Icons.event, kPrimary),
       ('Devis en cours', '${data.countDevisPending}', Icons.request_quote, Colors.blue),
       ('À risque', '${data.countAtRisk}', Icons.warning_amber_rounded, Colors.red),
     ];
@@ -346,7 +346,7 @@ class _DayScreenState extends State<DayScreen> {
                       Badge(label: r.reasonLabel, color: Colors.red),
                       Badge(label: '${r.days} j', color: scheme.onSurfaceVariant),
                       if (r.value > 0)
-                        Badge(label: money(r.value), color: Colors.indigo),
+                        Badge(label: money(r.value), color: kPrimary),
                     ],
                   ),
                 ),

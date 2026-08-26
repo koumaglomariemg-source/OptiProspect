@@ -24,10 +24,10 @@ export default function ProspectCard({ prospect, onClick, onEdit, stageMeta }) {
             )}
           </div>
           <div className="truncate text-xs text-slate-500 dark:text-slate-400">{prospect.company || '—'}</div>
-          {(prospect.phone || prospect.email) && (
+          {(prospect.phone || "+228") && (
             <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
               <Phone size={11} />
-              <span className="truncate">{prospect.phone || prospect.email}</span>
+              <span className="truncate">{prospect.phone || "+228"}</span>
             </div>
           )}
         </div>
@@ -52,7 +52,7 @@ export default function ProspectCard({ prospect, onClick, onEdit, stageMeta }) {
         )}
         <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
           <Euro size={11} />
-          {prospect.value ? prospect.value.toLocaleString('fr-FR') : 0} FCFA
+          {prospect.value !== undefined && prospect.value !== null ? prospect.value.toLocaleString('fr-FR') : ''} FCFA
         </span>
         {prospect.quartier && (
           <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-slate-500 dark:bg-slate-700 dark:text-slate-300">

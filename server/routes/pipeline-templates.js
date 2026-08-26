@@ -82,6 +82,22 @@ router.put('/:id', adminOnly, ah(async (req, res) => {
     for (const [i, s] of parseSteps(steps).entries()) {
       await db.run(insertStep, t.id, i, s.key, s.name, s.color, JSON.stringify(s.form_fields));
     }
+    await db.run(
+      'DELETE FROM prospect_steps WHERE prospect_id IN (SELECT id FROM prospects WHERE template_id = ?)',
+      t.id,
+    );
+    const newSteps = await getTemplateSteps(t.id);
+    const prospectRows = await db.all('SELECT id FROM prospects WHERE template_id = ?', t.id);
+    for (const p of prospectRows) {
+      for (const s of newSteps) {
+        await db.run(
+          'INSERT IGNORE INTO prospect_steps (prospect_id, step_id, status) VALUES (?,?,?)',
+          p.id,
+          s.id,
+          'pending',
+        );
+      }
+    }
   }
 
   const updated = await db.get('SELECT is_default FROM pipeline_templates WHERE id = ?', t.id);

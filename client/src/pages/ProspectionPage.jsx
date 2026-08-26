@@ -73,7 +73,7 @@ export default function ProspectionPage() {
           <div>
             <h1 className="text-xl font-bold">Prospection</h1>
             <p className="text-sm text-slate-400">
-              Renseignez et validez les étapes du pipeline prospect par prospect
+              Renseignez et validez les étapes du pipeline, unes après les autres
             </p>
           </div>
           <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
 
+import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
@@ -164,9 +165,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: Colors.indigo.withValues(alpha: 0.15),
+                  backgroundColor: kPrimary.withValues(alpha: 0.15),
                   child: Text(initials(r.userName ?? ''),
-                      style: const TextStyle(fontSize: 11, color: Colors.indigo)),
+                      style: const TextStyle(fontSize: 11, color: kPrimary)),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

@@ -470,13 +470,13 @@ class _KanbanCard extends StatelessWidget {
                   if (p.value > 0)
                     Badge(
                       label: money(p.value),
-                      color: Colors.indigo,
+                      color: kPrimary,
                       icon: Icons.payments_outlined,
                     ),
                   if (p.quartier != null && p.quartier!.isNotEmpty)
                     Badge(
                       label: p.quartier!,
-                      color: Colors.teal,
+                      color: kAccent,
                       icon: Icons.location_on_outlined,
                     ),
                 ],

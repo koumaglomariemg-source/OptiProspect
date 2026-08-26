@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../utils/constants.dart';
 import '../utils/formatters.dart';
+import '../config/app_theme.dart';
 import '../widgets/common.dart';
 import 'devis_form_screen.dart';
 
@@ -212,7 +213,7 @@ class _DevisDetailScreenState extends State<DevisDetailScreen> {
                     children: [
                       const Expanded(child: Text('ARR / an')),
                       Text(money(d.arr),
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimary)),
                     ],
                   ),
               ],

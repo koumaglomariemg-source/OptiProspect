@@ -46,7 +46,7 @@ export default function ProfilPage() {
   const save = async (e) => {
     e.preventDefault();
     if (password && (!currentPassword || !confirmCurrentPassword)) {
-      setError('Renseignez le mot de passe actuel et sa confirmation pour changer le mot de passe');
+      setError('Veuillez entrer votre mot de passe actuel et sa confirmation');
       return;
     }
     if (password && currentPassword !== confirmCurrentPassword) {

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
 
+import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
@@ -233,7 +234,7 @@ class _ProspectionScreenState extends State<ProspectionScreen> {
   }
 
   Widget _prospectTile(Prospect p, bool canWrite) {
-    final color = p.currentStep != null ? colorFromName(p.currentStep!.color) : Colors.indigo;
+    final color = p.currentStep != null ? colorFromName(p.currentStep!.color) : kPrimary;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),

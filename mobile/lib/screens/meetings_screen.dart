@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
 
+import '../config/app_theme.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
@@ -137,7 +138,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
   Widget _meetingCard(Meeting m, bool isManager) {
     final start = parseIso(m.startsAt);
     final isOnline = m.type == 'en_ligne';
-    final color = isOnline ? Colors.indigo : Colors.teal;
+    final color = isOnline ? kPrimary : kAccent;
     final dayStr = start == null ? '—' : '${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}';
     final timeStr = start == null
         ? 'Date à définir'
@@ -159,7 +160,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                       style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     Text('${start?.day ?? ''}',
                         style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                            fontSize: 20, fontWeight: FontWeight.bold, color: kPrimary)),
                   ],
                 ),
                 const SizedBox(width: 12),

@@ -1,11 +1,11 @@
 {
-    "name": "optiprospect_app",
-    "short_name": "optiprospect_app",
+    "name": "OptiProspect",
+    "short_name": "OptiProspect",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#ffffff",
-    "description": "A new Flutter project.",
+    "background_color": "#0f172a",
+    "theme_color": "#6366f1",
+    "description": "OptiProspect — Gestion de prospection commerciale moderne : pipeline Kanban, scoring, relances et analyse.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

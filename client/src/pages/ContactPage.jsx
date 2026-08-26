@@ -11,6 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import { api } from "../api.js";
+import { Logo } from "../components/Logo.jsx";
 
 const INTERESTS = [
   {
@@ -22,7 +23,7 @@ const INTERESTS = [
   {
     key: "plus_tard",
     label: "À reconsidérer",
-    desc: "Pas pour le moment, mais gardez le contact",
+    desc: "Plus tard, on garde le contact",
     icon: Clock,
   },
   {
@@ -49,11 +50,7 @@ function Shell({ children }) {
 function Header() {
   return (
     <div className="mb-6 flex items-center gap-3">
-      <img
-        src="/icons/icon-192.png"
-        alt="OptiProspect"
-        className="h-10 w-10 rounded-lg object-cover shadow-sm"
-      />
+      <Logo size={40} variant="mark" />
       <div>
         <h1 className="text-base font-bold leading-tight text-slate-900 dark:text-white">
           OptiProspect

@@ -167,7 +167,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 if (_hasActiveFilters) ...[
                   const SizedBox(width: 8),
-                  const Badge(label: 'Filtres actifs', color: Colors.indigo),
+                  const Badge(label: 'Filtres actifs', color: kPrimary),
                 ],
               ],
             ),
@@ -333,7 +333,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return ChoiceChip(
         label: Text(label),
         selected: value != null,
-        selectedColor: Colors.indigo.withValues(alpha: 0.2),
+        selectedColor: kPrimary.withValues(alpha: 0.2),
         onSelected: (s) {
           final next = s ? !(value ?? false) : null;
           onChanged(next);
@@ -407,7 +407,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (p.contratDepose) const Badge(label: 'déposé', color: Colors.indigo),
+                        if (p.contratDepose) const Badge(label: 'déposé', color: kPrimary),
                         if (p.contratSigne) ...[
                           const SizedBox(width: 4),
                           const Badge(label: 'signé', color: Colors.green),

@@ -201,7 +201,7 @@ class _DevisScreenState extends State<DevisScreen> {
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   if (d.arr > 0) ...[
                     const SizedBox(width: 8),
-                    Badge(label: 'ARR ${money(d.arr)}/an', color: Colors.teal),
+                    Badge(label: 'ARR ${money(d.arr)}/an', color: kAccent),
                   ],
                   const Spacer(),
                   if (isOwner && d.statut == 'brouillon')

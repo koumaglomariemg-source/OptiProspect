@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   CircleDashed,
@@ -112,6 +113,7 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
   const [interactions, setInteractions] = useState([]);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const load = async () => {
     try {
@@ -232,13 +234,20 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
       return;
     }
     setBusy(true);
+    let isLast = false;
     try {
       if (validate) {
         const final = { ...draft };
         for (const f of fields) if (f.type === "date") final[f.key] = todayISO();
         await api.saveStep(active.progress_id, final);
         await api.validateStep(active.progress_id);
-        setSaved("Étape validée, vous passez à la suivante");
+        const lastStep = steps[steps.length - 1];
+        if (lastStep && lastStep.progress_id === active.progress_id) {
+          isLast = true;
+          setShowSuccess(true);
+        } else {
+          setSaved("Étape validée, vous passez à la suivante");
+        }
       } else {
         await api.saveStep(active.progress_id, draft);
         setSaved("Brouillon enregistré");
@@ -249,7 +258,7 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
       setError(e.message);
     } finally {
       setBusy(false);
-      setTimeout(() => setSaved(""), 3000);
+      if (!isLast) setTimeout(() => setSaved(""), 3000);
     }
   };
 
@@ -275,6 +284,46 @@ export default function StepFormModal({ prospect, onClose, onChanged }) {
       <Modal title={`Pipeline — ${prospect.name}`} onClose={onClose} fullScreenMobile>
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-400">
           <Loader2 size={16} className="animate-spin" /> Chargement des étapes…
+        </div>
+      </Modal>
+    );
+  }
+
+  if (showSuccess) {
+    return (
+      <Modal title={`Pipeline — ${prospect.name}`} onClose={onClose} fullScreenMobile>
+        <div className="py-10 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15">
+            <CheckCircle2 size={36} className="text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h2 className="mt-4 text-xl font-bold">Pipeline terminé !</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+            Félicitations, toutes les étapes pour <span className="font-semibold text-slate-700 dark:text-slate-200">{prospect.name}</span> ont été validées.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => setShowSuccess(false)}
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            >
+              Revisiter les étapes
+            </button>
+            <button
+              onClick={() => {
+                setShowSuccess(false);
+                // rester sur la dernière étape pour permettre la modification
+                setTimeout(() => setActiveIdx(steps.length - 1), 0);
+              }}
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            >
+              <RotateCcw size={15} /> Modifier la dernière étape
+            </button>
+          </div>
+          <button
+            onClick={onClose}
+            className="mt-4 text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            Fermer
+          </button>
         </div>
       </Modal>
     );

@@ -107,131 +107,149 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ? ErrorRetry(message: _error!, onRetry: _load)
           : _overview == null
               ? const SkeletonScreen()
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl),
+              : DefaultTabController(
+                  length: 3,
+                  child: Column(
                     children: [
-                      _heroSection(user),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (showUserFilter) ...[
-                        _filtersSection(),
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
-                      _kpisSection(),
-                      const SizedBox(height: AppSpacing.lg),
-                      _forecastSection(),
-                      const SizedBox(height: AppSpacing.lg),
-                      _progressSection(),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (!isAdmin) ...[
-                        TimelineChart(
-                          title: 'Nouveaux prospects ($_days j)',
-                          data: [for (final t in _timeline ?? const <TimelinePoint>[]) (t.day, t.n)],
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        BarChartWidget(
-                          title: 'Prospects par étape',
-                          data: [
-                            for (final s in _overview!.byStage) (kStageLabels[s.key] ?? s.key, s.n)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+                        child: _heroSection(user),
+                      ),
+                      TabBar(
+                        labelColor: kPrimary,
+                        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                        indicatorColor: kPrimary,
+                        dividerColor: Theme.of(context).dividerColor,
+                        tabs: const [
+                          Tab(text: 'Aperçu'),
+                          Tab(text: 'Graphiques'),
+                          Tab(text: 'Équipe'),
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _tabView([
+                              if (showUserFilter) ...[
+                                _filtersSection(),
+                                const SizedBox(height: AppSpacing.lg),
+                              ],
+                              _kpisSection(),
+                              const SizedBox(height: AppSpacing.lg),
+                              _forecastSection(),
+                              const SizedBox(height: AppSpacing.lg),
+                              _nextActionsSection(),
+                              const SizedBox(height: AppSpacing.lg),
+                              if (!isAdmin) _atRiskSection(),
+                            ]),
+                            _tabView([
+                              TimelineChart(
+                                title: 'Nouveaux prospects ($_days j)',
+                                data: [for (final t in _timeline ?? const <TimelinePoint>[]) (t.day, t.n)],
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              BarChartWidget(
+                                title: 'Prospects par étape',
+                                data: [
+                                  for (final s in _overview!.byStage) (kStageLabels[s.key] ?? s.key, s.n)
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              BarChartWidget(
+                                title: 'Prospects par source',
+                                data: [
+                                  for (final s in _overview!.bySource) (kSourceLabels[s.key] ?? s.key, s.n)
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              BarChartWidget(
+                                title: 'Prospects par zone',
+                                data: [for (final z in _overview!.byZone) (z.key, z.n)],
+                                color: kAccent,
+                              ),
+                            ]),
+                            _tabView([
+                              _progressSection(),
+                              const SizedBox(height: AppSpacing.lg),
+                              _teamPerformanceSection(),
+                              const SizedBox(height: AppSpacing.lg),
+                              if (showUserFilter) _agingSection(),
+                              if (isAdmin) ...[
+                                const SizedBox(height: AppSpacing.lg),
+                                _adminGlobalStatsSection(),
+                              ],
+                            ]),
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.lg),
-                        BarChartWidget(
-                          title: 'Prospects par source',
-                          data: [
-                            for (final s in _overview!.bySource) (kSourceLabels[s.key] ?? s.key, s.n)
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        BarChartWidget(
-                          title: 'Prospects par zone',
-                          data: [for (final z in _overview!.byZone) (z.key, z.n)],
-                          color: Colors.teal,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
-                      _teamPerformanceSection(),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (!isAdmin) ...[
-                        _atRiskSection(),
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
-                      if (showUserFilter) ...[
-                        _agingSection(),
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
-                      if (!isAdmin) ...[
-                        _nextActionsSection(),
-                        const SizedBox(height: AppSpacing.xxl),
-                      ],
-                      if (isAdmin) ...[
-                        _adminGlobalStatsSection(),
-                        const SizedBox(height: AppSpacing.xxl),
-                      ],
+                      ),
                     ],
                   ),
                 ),
     );
   }
 
+  Widget _tabView(List<Widget> children) {
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl),
+        children: [
+          for (final c in children) c,
+        ],
+      ),
+    );
+  }
+
   Widget _heroSection(User? user) {
     final now = DateTime.now();
-    final day = DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(now);
+    final day = DateFormat('EEEE d MMMM', 'fr_FR').format(now);
     final first = user?.name.split(' ').first ?? '';
     return Container(
-      padding: EdgeInsets.all(AppSpacing.xl),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [kPrimary, kPrimaryDark],
+          colors: [kPrimaryDark, kPrimary, kAccent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          stops: const [0.0, 0.6, 1.0],
         ),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         boxShadow: [
           BoxShadow(
-            color: kPrimary.withValues(alpha: 0.4),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
+            color: kPrimary.withValues(alpha: 0.28),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
             spreadRadius: -4,
           ),
         ],
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Row(
         children: [
-          Positioned(
-            right: -20,
-            top: -24,
-            child: IgnorePointer(
-              child: Icon(Icons.auto_graph, size: 140, color: Colors.white.withValues(alpha: 0.08)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bonjour $first',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  day[0].toUpperCase() + day.substring(1),
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3),
+                ),
+              ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                day[0].toUpperCase() + day.substring(1),
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Bonjour $first',
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.3),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Voici votre tableau de bord du jour.',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 14.5, height: 1.3),
-              ),
-            ],
-          ),
+          Icon(Icons.auto_graph, size: 44, color: Colors.white.withValues(alpha: 0.25)),
         ],
       ),
     );
@@ -297,8 +315,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _kpisSection() {
     final o = _overview!;
     final kpis = <(String, String, IconData, Color)>[
-      ('Total', '${o.total}', Icons.people_outline, Colors.indigo),
-      ('Actifs', '${o.active}', Icons.rocket_launch_outlined, Colors.blue),
+      ('Total', '${o.total}', Icons.people_outline, kPrimary),
+      ('Actifs', '${o.active}', Icons.rocket_launch_outlined, kAccent),
       ('Converti', '${o.converted}', Icons.check_circle_outline, Colors.green),
       ('Perdu', '${o.lost}', Icons.cancel_outlined, Colors.red),
     ];
@@ -335,9 +353,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _miniStat('Taux de victoire', '${f.winRate.toStringAsFixed(0)}%', Colors.green),
               const SizedBox(width: AppSpacing.md),
-              _miniStat('Conversions 30j', '${f.expectedConversions30}', Colors.indigo),
+              _miniStat('Conversions 30j', '${f.expectedConversions30}', kPrimary),
               const SizedBox(width: AppSpacing.md),
-              _miniStat('Panier moyen', money(f.avgDealValue), Colors.orange),
+              _miniStat('Panier moyen', money(f.avgDealValue), kAccent),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -501,11 +519,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.sm,
                     children: [
-                      _miniChip('Pipeline', money(u.openValue), Colors.indigo),
+                      _miniChip('Pipeline', money(u.openValue), kPrimary),
                       _miniChip('Relances', '${u.relancesLate} en retard', Colors.red),
-                      _miniChip('Appels', '${u.calls}', Colors.blue),
-                      _miniChip('RDV', '${u.meetingsCount}', Colors.teal),
-                      _miniChip('Cycle', '${u.avgCycleDays} j', Colors.orange),
+                      _miniChip('Appels', '${u.calls}', kAccent),
+                      _miniChip('RDV', '${u.meetingsCount}', kAccent2),
+                      _miniChip('Cycle', '${u.avgCycleDays} j', Colors.blueGrey),
                     ],
                   ),
                 ],
@@ -571,7 +589,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Badge(label: r.reasonLabel, color: Colors.red),
                       Badge(label: '${r.days} j', color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      if (r.value > 0) Badge(label: money(r.value), color: Colors.indigo),
+                      if (r.value > 0) Badge(label: money(r.value), color: kPrimary),
                     ],
                   ),
                 ),
@@ -740,11 +758,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Expanded(
-                child: _adminStatCard('Équipe', '${_users?.length ?? 0}', Icons.people_outline, Colors.indigo),
+                child: _adminStatCard('Équipe', '${_users?.length ?? 0}', Icons.people_outline, kPrimary),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: _adminStatCard('Pipeline total', money(overview.byStage.fold(0, (sum, s) => sum + s.n * 100000)), Icons.attach_money, Colors.green),
+                child: _adminStatCard('Pipeline total', money(overview.byStage.fold(0, (sum, s) => sum + s.n * 100000)), Icons.attach_money, kAccent),
               ),
             ],
           ),
@@ -816,7 +834,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     Text(money(u.openValue),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.indigo)),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: kPrimary)),
                   ],
                 ),
               ),

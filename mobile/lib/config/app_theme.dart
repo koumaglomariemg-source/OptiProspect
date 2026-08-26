@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-const Color kPrimary = Color(0xFF4F46E5);
-const Color kPrimaryDark = Color(0xFF4338CA);
+const Color kPrimary = Color(0xFF6366F1);
+const Color kPrimaryDark = Color(0xFF4F46E5);
 const Color kAccent = Color(0xFF8B5CF6);
-const Color kAccent2 = Color(0xFFD946EF);
+const Color kAccent2 = Color(0xFFEC4899);
 
 class AppSpacing {
   static const double xs = 4;
@@ -25,8 +25,8 @@ ThemeData buildAppTheme(Brightness brightness) {
     seedColor: kPrimary,
     brightness: brightness,
   );
-  final surface = isDark ? const Color(0xFF171A24) : Colors.white;
-  final scaffold = isDark ? const Color(0xFF0E1017) : const Color(0xFFF4F5FB);
+  final surface = isDark ? const Color(0xFF131A22) : Colors.white;
+  final scaffold = isDark ? const Color(0xFF0C1117) : const Color(0xFFF2F6FA);
 
   return ThemeData(
     useMaterial3: true,
@@ -168,7 +168,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: isDark ? const Color(0xFF171A24) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF131A22) : Colors.white,
       indicatorColor: kPrimary.withValues(alpha: 0.12),
       elevation: 0,
       height: 76,
@@ -204,7 +204,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: isDark ? const Color(0xFF242837) : const Color(0xFF1F2432),
+      backgroundColor: isDark ? const Color(0xFF1E2833) : const Color(0xFF16283A),
       contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
     ),

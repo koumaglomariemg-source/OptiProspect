@@ -113,7 +113,7 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: kPrimary,
         foregroundColor: Colors.white,
         titleTextStyle: const TextStyle(
           color: Colors.white,
@@ -134,7 +134,7 @@ class _MainShellState extends State<MainShell> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.asset('assets/icons/icon-192.png', width: 24, height: 24, fit: BoxFit.cover),
+              child: Image.asset('assets/icons/app_icon.png', width: 24, height: 24, fit: BoxFit.cover),
             ),
             const SizedBox(width: 8),
             Text(visible[active].label),

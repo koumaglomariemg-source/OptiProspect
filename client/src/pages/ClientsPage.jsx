@@ -74,7 +74,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="font-bold text-emerald-500">{Number(c.value || 0).toLocaleString('fr-FR')} FCFA</div>
+                  <div className="font-bold text-emerald-500">{c.value != null ? Number(c.value).toLocaleString('fr-FR') : ''} FCFA</div>
                   <div className="text-[11px] text-slate-400">client depuis le {formatDate(c.converted_at)}</div>
                 </div>
               </div>

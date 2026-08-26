@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Bell,
+  Briefcase,
+  CalendarDays,
   ClipboardList,
   Columns3,
   Database,
   FileSignature,
+  FileText,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -83,7 +86,7 @@ const NAV = [
   {
     to: "/journee",
     label: "Ma journée",
-    icon: CalendarClock,
+    icon: CalendarDays,
     roles: ["commercial", "manager"],
   },
   {
@@ -119,13 +122,13 @@ const NAV = [
   {
     to: "/portefeuilles",
     label: "Portefeuilles",
-    icon: Users,
+    icon: Briefcase,
     roles: ["manager"],
   },
   {
     to: "/rapports",
     label: "Rapports",
-    icon: ClipboardList,
+    icon: FileText,
     roles: ["commercial", "manager"],
   },
   {

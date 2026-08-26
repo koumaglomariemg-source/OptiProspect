@@ -109,7 +109,7 @@ export default function ProspectDrawer({
   const { user } = useAuth();
   const isManager = ["manager", "admin"].includes(user?.role);
   const canWrite = user?.role !== "manager";
-  const [tab, setTab] = useState("interactions");
+  const [tab, setTab] = useState("fiche");
   const [interactions, setInteractions] = useState([]);
   const [devisList, setDevisList] = useState([]);
   const [devisModal, setDevisModal] = useState(null);
@@ -392,7 +392,7 @@ export default function ProspectDrawer({
   );
 
   return (
-    <div className="fixed inset-0 z-40">
+    <div className="fixed inset-0 z-[9999]">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
@@ -1149,12 +1149,12 @@ export default function ProspectDrawer({
                 prospect.email,
                 prospect.email ? `mailto:${prospect.email}` : null,
               )}
-              {infoRow(
-                <Phone size={15} />,
-                "Téléphone",
-                prospect.phone,
-                prospect.phone ? `tel:${prospect.phone}` : null,
-              )}
+{infoRow(
+  <Phone size={15} />,
+  "Téléphone",
+  prospect.phone || "+228",
+  prospect.phone ? `tel:${prospect.phone}` : "tel:+228",
+)}
               {infoRow(
                 <Linkedin size={15} />,
                 "LinkedIn",

@@ -361,7 +361,7 @@ class _DevisFormScreenState extends State<DevisFormScreen> {
               children: [
                 const Text('ARR (récurrent / an)'),
                 Text(money(_arr),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimary)),
               ],
             ),
         ],

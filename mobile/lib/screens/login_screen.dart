@@ -99,34 +99,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Center(
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      padding: const EdgeInsets.all(2.5),
-                      decoration: BoxDecoration(
-                        color: kPrimary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: kPrimary.withValues(alpha: 0.3),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(5),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(32),
-                          child: Image.asset(
-                            'assets/icons/icon-192.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(38),
+                      child: Image.asset(
+                        'assets/icons/app_icon.png',
+                        width: 76,
+                        height: 76,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),

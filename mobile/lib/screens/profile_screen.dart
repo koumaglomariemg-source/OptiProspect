@@ -208,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: KpiCard(icon: Icons.people_outline, value: '${stats.total}', label: 'Prospects', color: Colors.indigo),
+                              child: KpiCard(icon: Icons.people_outline, value: '${stats.total}', label: 'Prospects', color: kPrimary),
                             ),
                             const SizedBox(width: 8),
                             Expanded(

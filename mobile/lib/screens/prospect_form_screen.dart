@@ -28,17 +28,14 @@ class _ProspectFormScreenState extends State<ProspectFormScreen> {
   late final _secteur = TextEditingController(text: widget.prospect?.secteur ?? '');
   late final _product = TextEditingController(text: widget.prospect?.product ?? '');
   late final _adresse = TextEditingController(text: widget.prospect?.adresse ?? '');
-  late final _quartier = TextEditingController(text: widget.prospect?.quartier ?? '');
   late final _nextAction = TextEditingController(text: widget.prospect?.nextAction ?? '');
   late final _note = TextEditingController(text: widget.prospect?.note ?? '');
   late final _value = TextEditingController(
       text: (widget.prospect?.value ?? 0) > 0 ? (widget.prospect!.value).toStringAsFixed(0) : '');
-  late final _effectif = TextEditingController(
-      text: widget.prospect?.effectif != null ? '${widget.prospect!.effectif}' : '');
+  
 
   String? _source;
   String? _stage;
-  String? _temperature;
   int? _templateId;
   int? _assignedTo;
   bool _optionFraisScolaire = false;
@@ -55,7 +52,6 @@ class _ProspectFormScreenState extends State<ProspectFormScreen> {
     final p = widget.prospect;
     _source = p?.source?.isNotEmpty == true ? p!.source : 'site';
     _stage = p?.stage;
-    _temperature = p?.temperature ?? 'tiede';
     _templateId = p?.templateId;
     _assignedTo = p?.assignedTo;
     _optionFraisScolaire = p?.optionFraisScolaire ?? false;
@@ -66,7 +62,7 @@ class _ProspectFormScreenState extends State<ProspectFormScreen> {
   void dispose() {
     for (final c in [
       _firstName, _lastName, _company, _email, _phone, _linkedin, _secteur,
-      _product, _adresse, _quartier, _nextAction, _note, _value, _effectif,
+      _product, _adresse, _nextAction, _note, _value,
     ]) {
       c.dispose();
     }
@@ -99,12 +95,6 @@ class _ProspectFormScreenState extends State<ProspectFormScreen> {
       'source': _source ?? 'site',
       'value': double.tryParse(_value.text.replaceAll(',', '.')) ?? 0,
       'secteur': _secteur.text.trim(),
-      'product': _product.text.trim(),
-      'adresse': _adresse.text.trim(),
-      'quartier': _quartier.text.trim(),
-      'effectif': int.tryParse(_effectif.text),
-      'temperature': _temperature ?? 'tiede',
-      'next_action': _nextAction.text.trim(),
       'note': _note.text.trim(),
       'option_frais_scolaire': _optionFraisScolaire,
       if (_nextActionDate != null) 'next_action_date': toApiDateTime(_nextActionDate!),
@@ -226,31 +216,12 @@ class _ProspectFormScreenState extends State<ProspectFormScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _secteur,
-                        decoration: const InputDecoration(labelText: 'Secteur'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _temperature,
-                        decoration: const InputDecoration(labelText: 'Température'),
-                        items: [
-                          for (final e in kTemperatureLabels.entries)
-                            DropdownMenuItem(value: e.key, child: Text(e.value)),
-                        ],
-                        onChanged: (v) => setState(() => _temperature = v),
-                      ),
-                    ),
-                  ],
+                TextField(
+                  controller: _secteur,
+                  decoration: const InputDecoration(labelText: 'Secteur'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: _product,
                   decoration: InputDecoration(
                     labelText: _isEdit ? 'Produit' : 'Produit à proposer *',
                   ),
@@ -259,25 +230,6 @@ class _ProspectFormScreenState extends State<ProspectFormScreen> {
                 TextField(
                   controller: _adresse,
                   decoration: const InputDecoration(labelText: 'Adresse'),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _quartier,
-                        decoration: const InputDecoration(labelText: 'Quartier'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _effectif,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Effectif'),
-                      ),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
