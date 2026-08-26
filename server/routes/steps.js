@@ -57,17 +57,32 @@ async function syncProspectFromStep(progress) {
 }
 
 async function advanceStage(progress) {
-  const ps = await db.get(`
-    SELECT ps.id, ps.step_id FROM prospect_steps ps
+  // Trouver la première étape encore en attente dans l'ordre du pipeline
+  const next = await db.get(
+    `
+    SELECT st.key FROM prospect_steps ps
+    JOIN pipeline_template_steps st ON st.id = ps.step_id
     WHERE ps.prospect_id = ? AND ps.status = 'pending'
-    ORDER BY ps.id ASC LIMIT 1
-  `, progress.prospect_id);
-  const keys = await stageKeys();
-  const target = ps
-    ? await db.get('SELECT `key` FROM pipeline_template_steps WHERE id = ?', ps.step_id)
-    : null;
-  if (target && keys.includes(target.key)) {
-    await db.run("UPDATE prospects SET stage = ?, updated_at = NOW() WHERE id = ?", target.key, progress.prospect_id);
+    ORDER BY st.position ASC, ps.id ASC LIMIT 1
+  `,
+    progress.prospect_id,
+  );
+  if (next?.key) {
+    await db.run("UPDATE prospects SET stage = ?, updated_at = NOW() WHERE id = ?", next.key, progress.prospect_id);
+    return;
+  }
+  // Si plus aucune en attente (tout validé), mettre la dernière étape
+  const last = await db.get(
+    `
+    SELECT st.key FROM prospect_steps ps
+    JOIN pipeline_template_steps st ON st.id = ps.step_id
+    WHERE ps.prospect_id = ?
+    ORDER BY st.position DESC, ps.id DESC LIMIT 1
+  `,
+    progress.prospect_id,
+  );
+  if (last?.key) {
+    await db.run("UPDATE prospects SET stage = ?, updated_at = NOW() WHERE id = ?", last.key, progress.prospect_id);
   }
 }
 
