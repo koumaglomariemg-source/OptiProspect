@@ -80,6 +80,13 @@ export default function CartePage() {
     return () => window.removeEventListener("pf-open-prospect", onOpen);
   }, []);
 
+  // Quand le drawer se ferme, recalculer la taille Leaflet (PWA standalone)
+  useEffect(() => {
+    if (!drawerProspect && mapRef.current) {
+      setTimeout(() => mapRef.current?.invalidateSize(), 100);
+    }
+  }, [drawerProspect]);
+
   // Création de la carte (une seule fois)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -151,7 +158,7 @@ export default function CartePage() {
             ${p.quartier ? `<span class="pf-popup-badge">${escapeHtml(p.quartier)}</span>` : ""}
           </div>
           ${p.adresse ? `<div class="pf-popup-addr">${escapeHtml(p.adresse)}</div>` : ""}
-          <button class="pf-popup-btn" onclick="window.dispatchEvent(new CustomEvent('pf-open-prospect',{detail:${p.id}}))">Voir le prospect</button>
+          <button class="pf-popup-btn" onclick="window.dispatchEvent(new CustomEvent('pf-open-prospect',{detail:'${p.id}'}))">Voir le prospect</button>
         </div>
       `);
       L.marker([p.latitude, p.longitude], { icon }).addTo(layer).bindPopup(popup);
@@ -166,7 +173,24 @@ export default function CartePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prospects, dark, byKey]);
 
-  const drawerProspect = prospects.find((p) => p.id === drawerId);
+  const drawerProspect = prospects.find((p) => String(p.id) === String(drawerId));
+
+  // En PWA standalone le drawer portaled doit passer au-dessus du stacking context Leaflet (z 700)
+  // On désactive l'interaction carte quand le drawer est ouvert pour éviter qu'elle capte les touches
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (drawerProspect) {
+      map.dragging?.disable();
+      map.scrollWheelZoom?.disable();
+      map.doubleClickZoom?.disable();
+    } else {
+      map.dragging?.enable();
+      map.scrollWheelZoom?.enable();
+      map.doubleClickZoom?.enable();
+      setTimeout(() => map.invalidateSize(), 100);
+    }
+  }, [drawerProspect]);
 
   return (
     <div className="flex h-full flex-col">
@@ -224,7 +248,7 @@ export default function CartePage() {
         </div>
       )}
 
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div className={`relative min-h-0 flex-1 overflow-hidden ${drawerProspect ? 'hidden' : ''}`}>
         <div ref={containerRef} className="absolute inset-0" />
         {!loading && positioned.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
